@@ -201,7 +201,9 @@ START_TEST(t_tombstone_merging_01)
             std::sample(to_delete.begin(), to_delete.end(), std::back_inserter(del_vec), 3, std::mt19937{std::random_device{}()});
 
             for (size_t i=0; i<del_vec.size(); i++) {
-                R dr = {del_vec[i].first, del_vec[i].second};
+                R dr = {}; 
+                dr.key = del_vec[i].first;
+                dr.value = del_vec[i].second;
                 test_de->erase(dr);
                 to_delete.erase(del_vec[i]);
                 deleted.insert(del_vec[i]);

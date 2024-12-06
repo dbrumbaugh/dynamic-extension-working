@@ -565,7 +565,7 @@ private:
         vers->reconstruction(args->merges[0]);
       }
     } else {
-      for (ssize_t i = 0; i < args->merges.size(); i++) {
+      for (size_t i = 0; i < args->merges.size(); i++) {
         vers->reconstruction(args->merges[i].target,
                              args->merges[i].sources[0]);
       }

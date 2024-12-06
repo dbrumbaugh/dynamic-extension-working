@@ -19,6 +19,7 @@
 #include "framework/util/Configuration.h"
 
 #include "psu-util/timer.h"
+#include "util/types.h"
 
 namespace de {
 
@@ -427,7 +428,7 @@ public:
 
     auto new_level = InternalLevel<ShardType, QueryType>::reconstruction(
         levels, task.target);
-    if (task.target >= m_levels.size()) {
+    if (task.target >= (level_index) m_levels.size()) {
       m_current_state.push_back({new_level->get_record_count(),
                                  calc_level_record_capacity(task.target), 1,
                                  1});
@@ -461,7 +462,7 @@ public:
                              level_index incoming_level) {
     size_t shard_capacity = (L == LayoutPolicy::LEVELING) ? 1 : m_scale_factor;
 
-    if (base_level >= m_levels.size()) {
+    if (base_level >= (level_index) m_levels.size()) {
       m_levels.emplace_back(
           std::shared_ptr<InternalLevel<ShardType, QueryType>>(
               new InternalLevel<ShardType, QueryType>(base_level,
@@ -583,7 +584,7 @@ private:
       return -1;
 
     size_t incoming_rec_cnt = state[idx].reccnt;
-    for (level_index i = idx + 1; i < state.size(); i++) {
+    for (level_index i = idx + 1; i < (level_index) state.size(); i++) {
       if (can_reconstruct_with(i, incoming_rec_cnt, state)) {
         return i;
       }
@@ -661,7 +662,7 @@ private:
    */
   inline bool can_reconstruct_with(level_index idx, size_t incoming_rec_cnt,
                                    state_vector &state) {
-    if (idx >= state.size()) {
+    if (idx >= (level_index) state.size()) {
       return false;
     }
 

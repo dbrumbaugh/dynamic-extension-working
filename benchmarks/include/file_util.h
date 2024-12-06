@@ -40,13 +40,13 @@ static std::vector<QP> read_lookup_queries(std::string fname, double selectivity
 }
 
 template <typename QP>
-static std::vector<QP> generate_string_lookup_queries(std::vector<std::unique_ptr<char[]>> &strings, size_t cnt, gsl_rng *rng) {
+static std::vector<QP> generate_string_lookup_queries(std::vector<char *> &strings, size_t cnt, gsl_rng *rng) {
     std::vector<QP> queries;
 
     for (size_t i=0; i<cnt; i++) {
         auto idx = gsl_rng_uniform_int(rng, strings.size());
         QP q;
-        q.search_key = strings[idx].get();
+        q.search_key = strings[idx];
         queries.push_back(q);
     }
 
@@ -95,8 +95,8 @@ static std::vector<QP> read_binary_knn_queries(std::string fname, size_t k, size
     }
 
 
-    int32_t dim;
-    int32_t cnt;
+    uint32_t dim;
+    uint32_t cnt;
 
     file.read((char*) &(cnt), sizeof(cnt));
     file.read((char*) &(dim), sizeof(dim));
@@ -245,8 +245,8 @@ static std::vector<R> read_binary_vector_file(std::string &fname, size_t n) {
     std::vector<R> records;
     records.reserve(n);
 
-    int32_t dim;
-    int32_t cnt;
+    uint32_t dim;
+    uint32_t cnt;
 
     file.read((char*) &(cnt), sizeof(cnt));
     file.read((char*) &(dim), sizeof(dim));
@@ -269,7 +269,7 @@ static std::vector<R> read_binary_vector_file(std::string &fname, size_t n) {
     return records;
 }
 
-[[maybe_unused]] static std::vector<std::unique_ptr<char[]>>read_string_file(std::string fname, size_t n=10000000) {
+[[maybe_unused]] static std::vector<char *> read_string_file(std::string fname, size_t n=10000000) {
 
     std::fstream file;
     file.open(fname, std::ios::in);
@@ -279,16 +279,22 @@ static std::vector<R> read_binary_vector_file(std::string &fname, size_t n) {
         exit(EXIT_FAILURE);
     }
 
-    std::vector<std::unique_ptr<char[]>> strings;
+    std::vector<char *> strings;
     strings.reserve(n);
 
     size_t i=0;
     std::string line;
     while (i < n && std::getline(file, line, '\n')) {
-        strings.emplace_back(std::unique_ptr<char[]>(strdup(line.c_str())));
+        strings.emplace_back(strdup(line.c_str()));
         i++;
         psudb::progress_update((double) i / (double) n, "Reading file:");
     }
 
     return strings;
+}
+
+[[maybe_unused]] static void destroy_string_file_data(std::vector<char *> &data) {
+    for (size_t i=0; i<data.size(); i++) {
+        delete data[i];
+    }
 }

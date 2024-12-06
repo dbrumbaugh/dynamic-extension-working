@@ -80,7 +80,7 @@ typedef ssize_t level_index;
 typedef struct ReconstructionTask {
   std::vector<level_index> sources;
   level_index target;
-  size_t reccnt;
+  size_t reccnt = 0;
 
   void add_source(level_index source, size_t cnt) {
     sources.push_back(source);

@@ -10,6 +10,7 @@
  */
 
 
+#include <algorithm>
 #include "include/testing.h"
 #include "shard/VPTree.h"
 #include "query/knn.h"

@@ -5,8 +5,6 @@
 #define ENABLE_TIMER
 #define TS_TEST
 
-#include <thread>
-
 #include "framework/DynamicExtension.h"
 #include "shard/FSTrie.h"
 #include "query/pointlookup.h"
@@ -47,7 +45,7 @@ int main(int argc, char **argv) {
 
     std::vector<Rec> data;
     for (size_t i=0; i<strings.size(); i++) {
-        data.push_back({strings[i].get(), i, strlen(strings[i].get())});
+        data.push_back({strings[i], i, strlen(strings[i])});
     }
 
     std::vector<size_t> to_delete(n * delete_proportion);
@@ -95,6 +93,7 @@ int main(int argc, char **argv) {
 
     gsl_rng_free(rng);
     delete extension;
+    destroy_string_file_data(strings);
     fflush(stderr);
 }
 
