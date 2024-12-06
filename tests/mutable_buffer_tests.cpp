@@ -52,7 +52,9 @@ START_TEST(t_insert)
 {
     auto buffer = new MutableBuffer<Rec>(50, 100);
 
-    Rec rec = {0, 5};
+    Rec rec = {};
+    rec.key = 0;
+    rec.value = 5;
 
     /* insert records up to the low watermark */
     size_t cnt = 0;
@@ -107,7 +109,10 @@ START_TEST(t_advance_head)
 
     /* insert 75 records and get tail when LWM is exceeded */
     size_t new_head = 0;
-    Rec rec = {1, 1};
+    Rec rec = {};
+    rec.key = 1;
+    rec.value = 1;
+
     size_t cnt = 0;
     for (size_t i=0; i<75; i++) {
         ck_assert_int_eq(buffer->append(rec), 1);
@@ -204,7 +209,9 @@ START_TEST(t_truncate)
     auto buffer = new MutableBuffer<Rec>(50, 100);
 
     size_t ts_cnt = 0;
-    Rec rec = {0, 5};
+    Rec rec = {};
+    rec.key = 0;
+    rec.value = 5;
 
     for (size_t i=0; i<100; i++) {
         bool ts = false;
@@ -244,7 +251,10 @@ START_TEST(t_bview_get)
 
     /* insert 75 records and get tail when LWM is exceeded */
     size_t new_head = 0;
-    Rec rec = {1, 1};
+    Rec rec = {};
+    rec.key = 1;
+    rec.value = 1;
+
     size_t cnt = 0;
     for (size_t i=0; i<75; i++) {
         ck_assert_int_eq(buffer->append(rec), 1);
@@ -322,7 +332,10 @@ START_TEST(t_bview_delete)
 
     /* insert 75 records and get tail when LWM is exceeded */
     size_t new_head = 0;
-    Rec rec = {1, 1};
+    Rec rec = {};
+    rec.key = 1;
+    rec.value = 1;
+
     for (size_t i=0; i<75; i++) {
         ck_assert_int_eq(buffer->append(rec), 1);
 

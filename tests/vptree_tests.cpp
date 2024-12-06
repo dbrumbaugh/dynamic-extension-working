@@ -29,8 +29,8 @@ START_TEST(t_mbuffer_init)
     size_t n= 24;
     auto buffer = new MutableBuffer<PRec>(n/2, n);
 
-    for (int64_t i=0; i<n; i++) {
-        buffer->append({(uint64_t) i, (uint64_t) i});
+    for (size_t i=0; i<n; i++) {
+        buffer->append({i, i});
     }
 
     Shard* shard = new Shard(buffer->get_buffer_view());
@@ -139,7 +139,7 @@ START_TEST(t_buffer_query)
         std::sort(result.begin(), result.end());
         size_t start = 120 - 5;
         for (size_t i=0; i<result.size(); i++) {
-            ck_assert_int_eq(result[i].rec.data[0], start++);
+            ck_assert_int_eq(result[i]->rec.data[0], start++);
         }
     }
 
@@ -169,17 +169,17 @@ START_TEST(t_knn_query)
         std::sort(results.begin(), results.end());
 
         if ((int64_t) (p.point.data[0] - p.k/2 - 1) < 0) {
-            ck_assert_int_eq(results[0].rec.data[0], 0);
+            ck_assert_int_eq(results[0]->rec.data[0], 0);
         } else {
-            ck_assert(results[0].rec.data[0] == (p.point.data[0] - p.k/2 - 1) ||
-                      results[0].rec.data[0] == (p.point.data[0] - p.k/2) ||
-                      results[0].rec.data[0] == (p.point.data[0] - p.k/2 + 1));
+            ck_assert(results[0]->rec.data[0] == (p.point.data[0] - p.k/2 - 1) ||
+                      results[0]->rec.data[0] == (p.point.data[0] - p.k/2) ||
+                      results[0]->rec.data[0] == (p.point.data[0] - p.k/2 + 1));
         }
 
 
-        size_t start = results[0].rec.data[0];
+        size_t start = results[0]->rec.data[0];
         for (size_t i=0; i<results.size(); i++) {
-            ck_assert_int_eq(results[i].rec.data[0], start++);
+            ck_assert_int_eq(results[i]->rec.data[0], start++);
         }
     }
 

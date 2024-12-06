@@ -27,12 +27,12 @@
  * include statement.
  */
 
-#include "shard/FSTrie.h"
-#include "testing.h"
-#include <check.h>
-using namespace de;
-typedef StringRec R;
-typedef FSTrie<R> Shard;
+// #include "shard/FSTrie.h"
+// #include "testing.h"
+// #include <check.h>
+// using namespace de;
+// typedef StringRec R;
+// typedef FSTrie<R> Shard;
 
 START_TEST(t_point_lookup_query)
 {
@@ -99,7 +99,7 @@ START_TEST(t_buffer_point_lookup)
 END_TEST
 
 
-static void inject_pointlookup_tests(Suite *suite) {
+[[maybe_unused]] static void inject_pointlookup_tests(Suite *suite) {
     TCase *point_lookup_query = tcase_create("Point Lookup Testing"); 
     tcase_add_test(point_lookup_query, t_point_lookup_query); 
     tcase_add_test(point_lookup_query, t_buffer_point_lookup); 

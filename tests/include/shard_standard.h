@@ -35,19 +35,27 @@ typedef ISAMTree<R> Shard;
 START_TEST(t_mbuffer_init)
 {
     auto buffer = new MutableBuffer<R>(512, 1024);
+    R r = {};
+    
     for (uint64_t i = 512; i > 0; i--) {
         uint32_t v = i;
-        buffer->append({i, v});
+        r.key = i;
+        r.value = v;
+        buffer->append(r);
     }
     
     for (uint64_t i = 1; i <= 256; ++i) {
         uint32_t v = i;
-        buffer->append({i, v}, true);
+        r.key = i;
+        r.value = v;
+        buffer->append(r, true);
     }
 
     for (uint64_t i = 257; i <= 512; ++i) {
         uint32_t v = i + 1;
-        buffer->append({i, v});
+        r.key = i;
+        r.value = v;
+        buffer->append(r);
     }
 
     Shard* shard = new Shard(buffer->get_buffer_view());

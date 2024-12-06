@@ -18,7 +18,6 @@
 #pragma once
 
 #include "query/rangecount.h"
-#include <algorithm>
 
 /*
  * Uncomment these lines temporarily to remove errors in this file
@@ -28,7 +27,6 @@
  * include statement.
  */
 // #include "shard/ISAMTree.h"
-// #include "query/rangequery.h"
 // #include "testing.h"
 // #include <check.h>
 // using namespace de;
@@ -49,7 +47,7 @@ START_TEST(t_range_count)
     auto result = rc::Query<Shard>::local_query(&shard, local_query);
     delete local_query;
 
-    ck_assert_int_eq(result[0].record_count - result[0].tombstone_count, parms.upper_bound - parms.lower_bound + 1);
+    ck_assert_int_eq(result.record_count - result.tombstone_count, parms.upper_bound - parms.lower_bound + 1);
 
     delete buffer;
 }
@@ -68,7 +66,7 @@ START_TEST(t_buffer_range_count)
         auto result = rc::Query<Shard>::local_query_buffer(query); 
         delete query;
 
-        ck_assert_int_eq(result[0].record_count - result[0].tombstone_count, parms.upper_bound - parms.lower_bound + 1);
+        ck_assert_int_eq(result.record_count - result.tombstone_count, parms.upper_bound - parms.lower_bound + 1);
     }
 
     delete buffer;
@@ -91,28 +89,28 @@ START_TEST(t_range_count_merge)
     auto query1 = rc::Query<Shard>::local_preproc(&shard1, &parms);
     auto query2 = rc::Query<Shard>::local_preproc(&shard2, &parms);
 
-    std::vector<std::vector<rc::Query<Shard>::LocalResultType>> results(2);
+    std::vector<rc::Query<Shard>::LocalResultType> results(2);
     results[0] = rc::Query<Shard>::local_query(&shard1, query1);     
     results[1] = rc::Query<Shard>::local_query(&shard2, query2); 
     delete query1;
     delete query2;
 
-    size_t reccnt = results[0][0].record_count + results[1][0].record_count;
-    size_t tscnt = results[0][0].tombstone_count + results[1][0].tombstone_count;
+    size_t reccnt = results[0].record_count + results[1].record_count;
+    size_t tscnt = results[0].tombstone_count + results[1].tombstone_count;
 
     ck_assert_int_eq(reccnt - tscnt, result_size);
 
-    std::vector<rc::Query<Shard>::ResultType> result;
+    rc::Query<Shard>::ResultType result;
     rc::Query<Shard>::combine(results, nullptr, result);
 
-    ck_assert_int_eq(result[0], result_size);
+    ck_assert_int_eq(result, result_size);
 
     delete buffer1;
     delete buffer2;
 }
 END_TEST
 
-static void inject_rangecount_tests(Suite *suite) {
+[[maybe_unused]] static void inject_rangecount_tests(Suite *suite) {
     TCase *range_count = tcase_create("Range Query Testing"); 
     tcase_add_test(range_count, t_range_count); 
     tcase_add_test(range_count, t_buffer_range_count); 

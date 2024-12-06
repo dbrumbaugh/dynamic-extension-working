@@ -202,7 +202,7 @@ public:
    *  @return A future, from which the query results can be retrieved upon
    *          query completion
    */
-  std::future<std::vector<QueryResult>>
+  std::future<QueryResult>
   query(Parameters &&parms) {
     return schedule_query(std::move(parms));
   }
@@ -628,25 +628,16 @@ private:
     QueryType::distribute_query(parms, local_queries, buffer_query);
 
     /* execute the local/buffer queries and combine the results into output */
-    std::vector<QueryResult> output;
+    QueryResult output;
     do {
-      std::vector<std::vector<LocalResult>>
-          query_results(shards.size() + 1);
+      std::vector<LocalResult> query_results(shards.size() + 1);
       for (size_t i = 0; i < query_results.size(); i++) {
-        std::vector<LocalResult> local_results;
-        ShardID shid;
-
         if (i == 0) { /* execute buffer query */
-          local_results = QueryType::local_query_buffer(buffer_query);
-          shid = INVALID_SHID;
+          query_results[i] = QueryType::local_query_buffer(buffer_query);
         } else { /*execute local queries */
-          local_results = QueryType::local_query(shards[i - 1].second,
+          query_results[i] = QueryType::local_query(shards[i - 1].second,
                                                  local_queries[i - 1]);
-          shid = shards[i - 1].first;
         }
-
-        /* framework-level, automatic delete filtering */
-        query_results[i] = std::move(local_results);
 
         /* end query early if EARLY_ABORT is set and a result exists */
         if constexpr (QueryType::EARLY_ABORT) {
@@ -695,7 +686,7 @@ private:
     m_sched.schedule_job(reconstruction, 0, args, RECONSTRUCTION);
   }
 
-  std::future<std::vector<QueryResult>>
+  std::future<QueryResult>
   schedule_query(Parameters &&query_parms) {
     auto args =
         new QueryArgs<ShardType, QueryType, DynamicExtension>();

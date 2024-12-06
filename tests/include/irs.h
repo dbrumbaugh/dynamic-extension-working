@@ -18,7 +18,6 @@
 #pragma once
 
 #include "query/irs.h"
-#include <algorithm>
 
 /*
  * Uncomment these lines temporarily to remove errors in this file
@@ -27,16 +26,16 @@
  * should be included in the source file that includes this one, above the
  * include statement.
  */
-#include "shard/ISAMTree.h"
-#include "query/irs.h"
-#include "testing.h"
-#include <check.h>
-#include <gsl/gsl_rng.h>
-using namespace de;
+// #include "shard/ISAMTree.h"
+// #include "query/irs.h"
+// #include "testing.h"
+// #include <check.h>
+// #include <gsl/gsl_rng.h>
+// using namespace de;
 
-typedef Rec R;
-typedef ISAMTree<R> Shard;
-typedef irs::Query<ISAMTree<R>> Query;
+// typedef Rec R;
+// typedef ISAMTree<R> Shard;
+// typedef irs::Query<ISAMTree<R>> Query;
 
 static gsl_rng *g_rng;
 
@@ -60,8 +59,8 @@ START_TEST(t_irs)
 
     ck_assert_int_eq(result.size(), k);
     for (size_t i=0; i<result.size(); i++) {
-        ck_assert_int_le(result[i].rec.key, parms.upper_bound);
-        ck_assert_int_ge(result[i].rec.key, parms.lower_bound);
+        ck_assert_int_le(result[i].key, parms.upper_bound);
+        ck_assert_int_ge(result[i].key, parms.lower_bound);
     }
 
     delete buffer;
@@ -89,8 +88,8 @@ START_TEST(t_buffer_irs)
 
         ck_assert_int_le(result.size(), k);
         for (size_t i=0; i<result.size(); i++) {
-            ck_assert_int_le(result[i].rec.key, parms.upper_bound);
-            ck_assert_int_ge(result[i].rec.key, parms.lower_bound);
+            ck_assert_int_le(result[i].key, parms.upper_bound);
+            ck_assert_int_ge(result[i].key, parms.lower_bound);
         }
     }
 
@@ -128,7 +127,7 @@ START_TEST(t_irs_merge)
 
     irs::Query<Shard>::distribute_query(&parms, {query1, query2}, &dummy_buffer_query);
 
-    std::vector<std::vector<irs::Query<Shard>::LocalResultType>> results(2);
+    std::vector<irs::Query<Shard>::LocalResultType> results(2);
     results[0] = irs::Query<Shard>::local_query(&shard1, query1);     
     results[1] = irs::Query<Shard>::local_query(&shard2, query2); 
     delete query1;
@@ -136,16 +135,16 @@ START_TEST(t_irs_merge)
 
     ck_assert_int_eq(results[0].size() + results[1].size(), k);
 
-    std::vector<std::vector<Wrapped<R>>> proc_results;
+    std::vector<std::vector<R>> proc_results;
 
     for (size_t j=0; j<results.size(); j++) {
-        proc_results.emplace_back(std::vector<Wrapped<R>>());
+        proc_results.emplace_back(std::vector<R>());
         for (size_t i=0; i<results[j].size(); i++) {
             proc_results[j].emplace_back(results[j][i]);
         }
     }
 
-    std::vector<irs::Query<Shard>::ResultType> result;
+    irs::Query<Shard>::ResultType result;
     irs::Query<Shard>::combine(proc_results, nullptr, result);
     ck_assert_int_eq(result.size(), k);
 
@@ -154,7 +153,7 @@ START_TEST(t_irs_merge)
 }
 END_TEST
 
-static void inject_irs_tests(Suite *suite) {
+[[maybe_unused]] static void inject_irs_tests(Suite *suite) {
     g_rng = gsl_rng_alloc(gsl_rng_mt19937);
 
     TCase *irs = tcase_create("Independent Range Sampling Query Testing"); 

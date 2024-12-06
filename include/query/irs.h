@@ -40,15 +40,15 @@ public:
     BufferView<R> *buffer;
 
     size_t cutoff;
-    std::vector<Wrapped<R>> records;
+    std::vector<R> records;
     std::unique_ptr<psudb::Alias> alias;
     size_t sample_size;
 
     Parameters global_parms;
   };
 
-  typedef Wrapped<R> LocalResultType;
-  typedef R ResultType;
+  typedef std::vector<R> LocalResultType;
+  typedef std::vector<R> ResultType;
 
   constexpr static bool EARLY_ABORT = false;
   constexpr static bool SKIP_DELETE_FILTER = false;
@@ -86,9 +86,11 @@ public:
     }
 
     for (size_t i = 0; i < query->cutoff; i++) {
-      if ((query->buffer->get(i)->rec.key >= query->global_parms.lower_bound) &&
-          (buffer->get(i)->rec.key <= query->global_parms.upper_bound)) {
-        query->records.emplace_back(*(query->buffer->get(i)));
+      auto rec = buffer->get(i);
+      if (rec->rec.key >= query->global_parms.lower_bound &&
+          rec->rec.key <= query->global_parms.upper_bound &&
+          (!rec->is_deleted() && !rec->is_tombstone())) {
+        query->records.emplace_back(query->buffer->get(i)->rec);
       }
     }
 
@@ -163,10 +165,10 @@ public:
     }
   }
 
-  static std::vector<LocalResultType> local_query(S *shard, LocalQuery *query) {
+  static LocalResultType local_query(S *shard, LocalQuery *query) {
     auto sample_sz = query->sample_size;
 
-    std::vector<LocalResultType> result_set;
+    LocalResultType result_set;
 
     if (sample_sz == 0 || query->lower_idx == shard->get_record_count()) {
       return result_set;
@@ -180,15 +182,19 @@ public:
           (range_length > 0)
               ? gsl_rng_uniform_int(query->global_parms.rng, range_length)
               : 0;
-      result_set.emplace_back(*shard->get_record_at(query->lower_idx + idx));
+      auto wrec = shard->get_record_at(query->lower_idx + idx);
+
+      if (!wrec->is_deleted() && !wrec->is_tombstone()) {
+        result_set.emplace_back(wrec->rec);
+      }
     } while (attempts < sample_sz);
 
     return result_set;
   }
 
-  static std::vector<LocalResultType>
+  static LocalResultType
   local_query_buffer(LocalQueryBuffer *query) {
-    std::vector<LocalResultType> result;
+    LocalResultType result;
     result.reserve(query->sample_size);
 
     if constexpr (REJECTION) {
@@ -197,8 +203,9 @@ public:
         auto rec = query->buffer->get(idx);
 
         if (rec->rec.key >= query->global_parms.lower_bound &&
-            rec->rec.key <= query->global_parms.upper_bound) {
-          result.emplace_back(*rec);
+            rec->rec.key <= query->global_parms.upper_bound &&
+            (!rec->is_deleted() && !rec->is_tombstone())) {
+          result.emplace_back(rec->rec);
         }
       }
 
@@ -215,16 +222,16 @@ public:
   }
 
   static void
-  combine(std::vector<std::vector<LocalResultType>> const &local_results,
-          Parameters *parms, std::vector<ResultType> &output) {
+  combine(std::vector<LocalResultType> const &local_results,
+          Parameters *parms, ResultType &output) {
     for (size_t i = 0; i < local_results.size(); i++) {
       for (size_t j = 0; j < local_results[i].size(); j++) {
-        output.emplace_back(local_results[i][j].rec);
+        output.emplace_back(local_results[i][j]);
       }
     }
   }
 
-  static bool repeat(Parameters *parms, std::vector<ResultType> &output,
+  static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {
     if (output.size() < parms->sample_size) {

@@ -38,8 +38,8 @@ public:
     Parameters global_parms;
   };
 
-  typedef Wrapped<R> LocalResultType;
-  typedef R ResultType;
+  typedef std::vector<Wrapped<R>> LocalResultType;
+  typedef std::vector<R> ResultType;
 
   constexpr static bool EARLY_ABORT = false;
   constexpr static bool SKIP_DELETE_FILTER = true;
@@ -69,8 +69,8 @@ public:
     return;
   }
 
-  static std::vector<LocalResultType> local_query(S *shard, LocalQuery *query) {
-    std::vector<LocalResultType> result;
+  static LocalResultType local_query(S *shard, LocalQuery *query) {
+    LocalResultType result;
 
     /*
      * if the returned index is one past the end of the
@@ -101,10 +101,9 @@ public:
     return result;
   }
 
-  static std::vector<LocalResultType>
-  local_query_buffer(LocalQueryBuffer *query) {
+  static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
 
-    std::vector<LocalResultType> result;
+    LocalResultType result;
     for (size_t i = 0; i < query->buffer->get_record_count(); i++) {
       auto rec = query->buffer->get(i);
       if (rec->rec.key >= query->global_parms.lower_bound &&
@@ -116,26 +115,25 @@ public:
     return result;
   }
 
-  static void
-  combine(std::vector<std::vector<LocalResultType>> const &local_results,
-          Parameters *parms, std::vector<ResultType> &output) {
-    std::vector<Cursor<LocalResultType>> cursors;
+  static void combine(std::vector<LocalResultType> const &local_results,
+                      Parameters *parms, ResultType &output) {
+    std::vector<Cursor<Wrapped<R>>> cursors;
     cursors.reserve(local_results.size());
 
-    psudb::PriorityQueue<LocalResultType> pq(local_results.size());
+    psudb::PriorityQueue<Wrapped<R>> pq(local_results.size());
     size_t total = 0;
     size_t tmp_n = local_results.size();
 
     for (size_t i = 0; i < tmp_n; ++i)
       if (local_results[i].size() > 0) {
         auto base = local_results[i].data();
-        cursors.emplace_back(Cursor<LocalResultType>{
+        cursors.emplace_back(Cursor<Wrapped<R>>{
             base, base + local_results[i].size(), 0, local_results[i].size()});
         assert(i == cursors.size() - 1);
         total += local_results[i].size();
         pq.push(cursors[i].ptr, tmp_n - i - 1);
       } else {
-        cursors.emplace_back(Cursor<LocalResultType>{nullptr, nullptr, 0, 0});
+        cursors.emplace_back(Cursor<Wrapped<R>>{nullptr, nullptr, 0, 0});
       }
 
     if (total == 0) {
@@ -146,9 +144,8 @@ public:
 
     while (pq.size()) {
       auto now = pq.peek();
-      auto next = pq.size() > 1
-                      ? pq.peek(1)
-                      : psudb::queue_record<LocalResultType>{nullptr, 0};
+      auto next = pq.size() > 1 ? pq.peek(1)
+                                : psudb::queue_record<Wrapped<R>>{nullptr, 0};
       if (!now.data->is_tombstone() && next.data != nullptr &&
           now.data->rec == next.data->rec && next.data->is_tombstone()) {
 
@@ -156,9 +153,9 @@ public:
         pq.pop();
         auto &cursor1 = cursors[tmp_n - now.version - 1];
         auto &cursor2 = cursors[tmp_n - next.version - 1];
-        if (advance_cursor<LocalResultType>(cursor1))
+        if (advance_cursor<Wrapped<R>>(cursor1))
           pq.push(cursor1.ptr, now.version);
-        if (advance_cursor<LocalResultType>(cursor2))
+        if (advance_cursor<Wrapped<R>>(cursor2))
           pq.push(cursor2.ptr, next.version);
       } else {
         auto &cursor = cursors[tmp_n - now.version - 1];
@@ -167,7 +164,7 @@ public:
 
         pq.pop();
 
-        if (advance_cursor<LocalResultType>(cursor))
+        if (advance_cursor<Wrapped<R>>(cursor))
           pq.push(cursor.ptr, now.version);
       }
     }
@@ -175,7 +172,7 @@ public:
     return;
   }
 
-  static bool repeat(Parameters *parms, std::vector<ResultType> &output,
+  static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {
     return false;

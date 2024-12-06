@@ -55,17 +55,15 @@ static void run_queries(DE *extension, std::vector<typename Q::Parameters> &quer
                 itr++;
             }
         }else if constexpr (std::is_same_v<PGM, DE>) {
-            size_t tot = 0;
             auto ptr = extension->find(queries[i].lower_bound);
             while (ptr != extension->end() && ptr->first <= queries[i].upper_bound) {
-                tot++;
                 ++ptr;
             }
         } else {
             auto q = queries[i];
             auto res = extension->query(std::move(q));
             if constexpr (!BSM) {
-                auto result = res.get();
+                [[maybe_unused]] auto result = res.get();
                 #ifdef BENCH_PRINT_RESULTS
                     fprintf(stdout, "\n\n");
                     for (int i=result.size()-1; i>=0; i--) {
@@ -111,7 +109,7 @@ static void run_static_queries(S *shard, std::vector<typename Q::Parameters> &qu
         std::vector<typename Q::LocalQuery*> local_queries = {Q::local_preproc(shard, q)};
 
         Q::distribute_query(q, local_queries, nullptr);
-        auto res = Q::local_query(shard, local_queries[0]); 
+        [[maybe_unused]] auto res = Q::local_query(shard, local_queries[0]); 
 
         #ifdef BENCH_PRINT_RESULTS
             fprintf(stdout, "\n\n");

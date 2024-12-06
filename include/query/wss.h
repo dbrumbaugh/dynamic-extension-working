@@ -49,8 +49,8 @@ public:
   constexpr static bool EARLY_ABORT = false;
   constexpr static bool SKIP_DELETE_FILTER = false;
 
-  typedef Wrapped<R> LocalResultType;
-  typedef R ResultType;
+  typedef std::vector<R> LocalResultType;
+  typedef std::vector<R> ResultType;
 
   static LocalQuery *local_preproc(S *shard, Parameters *parms) {
     auto query = new LocalQuery();
@@ -130,8 +130,8 @@ public:
     }
   }
 
-  static std::vector<LocalResultType> local_query(S *shard, LocalQuery *query) {
-    std::vector<LocalResultType> result;
+  static LocalResultType local_query(S *shard, LocalQuery *query) {
+    LocalResultType result;
 
     if (query->sample_size == 0) {
       return result;
@@ -139,25 +139,25 @@ public:
 
     for (size_t i = 0; i < query->sample_size; i++) {
       size_t idx = shard->get_weighted_sample(query->global_parms.rng);
-      if (!shard->get_record_at(idx)->is_deleted()) {
-        result.emplace_back(*shard->get_record_at(idx));
+      if (!shard->get_record_at(idx)->is_deleted() && !shard->get_record_at(idx)->is_tombstone()) {
+        result.emplace_back(shard->get_record_at(idx)->rec);
       }
     }
 
     return result;
   }
 
-  static std::vector<LocalResultType>
+  static LocalResultType
   local_query_buffer(LocalQueryBuffer *query) {
-    std::vector<LocalResultType> result;
+    LocalResultType result;
 
     for (size_t i = 0; i < query->sample_size; i++) {
       auto idx = gsl_rng_uniform_int(query->global_parms.rng, query->cutoff);
       auto rec = query->buffer->get(idx);
 
       auto test = gsl_rng_uniform(query->global_parms.rng) * query->max_weight;
-      if (test <= rec->rec.weight && !rec->is_deleted()) {
-        result.emplace_back(*rec);
+      if (test <= rec->rec.weight && !rec->is_deleted() && !rec->is_tombstone()) {
+        result.emplace_back(rec->rec);
       }
     }
 
@@ -165,16 +165,16 @@ public:
   }
 
   static void
-  combine(std::vector<std::vector<LocalResultType>> const &local_results,
-          Parameters *parms, std::vector<ResultType> &output) {
+  combine(std::vector<LocalResultType> const &local_results,
+          Parameters *parms, ResultType &output) {
     for (size_t i = 0; i < local_results.size(); i++) {
       for (size_t j = 0; j < local_results[i].size(); j++) {
-        output.emplace_back(local_results[i][j].rec);
+        output.emplace_back(local_results[i][j]);
       }
     }
   }
 
-  static bool repeat(Parameters *parms, std::vector<ResultType> &output,
+  static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {
     if (output.size() < parms->sample_size) {

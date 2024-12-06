@@ -14,12 +14,15 @@ set(tests True)
 set(bench false)
 set(vldb_bench true)
 
+# ALEX doesn't build under C++20
+set(build_alex false)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_FLAGS=-latomic -mcx16)
 
-add_compile_options(-Iinclude -Iexternal/PLEX/include -Iexternal -mcx16 -march=native) # -fconcepts-diagnostics-depth=3)
+add_compile_options(-Iinclude -Iexternal/PLEX/include -Iexternal -mcx16 -march=native -Werror) # -fconcepts-diagnostics-depth=3)
 
 find_package(OpenMP REQUIRED)
 add_compile_options(${OpenMP_CXX_FLAGS})
@@ -130,11 +133,6 @@ if (tests)
     target_link_options(alias_tests PUBLIC -mcx16)
     target_include_directories(alias_tests PRIVATE include external/psudb-common/cpp/include)
 
-    add_executable(triespline_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/triespline_tests.cpp)
-    target_link_libraries(triespline_tests PUBLIC gsl check subunit  pthread atomic)
-    target_link_options(triespline_tests PUBLIC -mcx16)
-    target_include_directories(triespline_tests PRIVATE include external/psudb-common/cpp/include external/PLEX/include)
-
     add_executable(pgm_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/pgm_tests.cpp)
     target_link_libraries(pgm_tests PUBLIC gsl check subunit  pthread gomp atomic)
     target_include_directories(pgm_tests PRIVATE include external/PGM-index/include external/psudb-common/cpp/include)
@@ -144,6 +142,11 @@ if (tests)
     # Triespline code doesn't build under OpenBSD due to ambiguous function call;
     # this is likely a difference between gcc and clang, rather than an OS thing 
     if (NOT BSD) 
+        add_executable(triespline_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/triespline_tests.cpp)
+        target_link_libraries(triespline_tests PUBLIC gsl check subunit  pthread atomic)
+        target_link_options(triespline_tests PUBLIC -mcx16)
+        target_include_directories(triespline_tests PRIVATE include external/psudb-common/cpp/include external/PLEX/include)
+        
         add_executable(triespline_debug ${CMAKE_CURRENT_SOURCE_DIR}/tests/triespline_debug.cpp)
         target_link_libraries(triespline_debug PUBLIC gsl check subunit  pthread atomic)
         target_link_options(triespline_debug PUBLIC -mcx16)
@@ -227,12 +230,6 @@ if (vldb_bench)
     target_link_options(ts_bsm_bench PUBLIC -mcx16)
     target_compile_options(ts_bsm_bench PUBLIC)
 
-    #add_executable(ts_mdsp_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/ts_mdsp_bench.cpp)
-    #target_link_libraries(ts_mdsp_bench PUBLIC gsl pthread atomic)
-    #target_include_directories(ts_mdsp_bench PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
-    #target_link_options(ts_mdsp_bench PUBLIC -mcx16)
-    #target_compile_options(ts_mdsp_bench PUBLIC)
-    
     add_executable(pgm_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/pgm_bench.cpp)
     target_link_libraries(pgm_bench PUBLIC gsl pthread atomic gomp)
     target_include_directories(pgm_bench PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
@@ -251,11 +248,13 @@ if (vldb_bench)
     target_link_options(btree_bench PUBLIC -mcx16)
     target_compile_options(btree_bench PUBLIC)
 
-    add_executable(alex_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/alex_bench.cpp)
-    target_link_libraries(alex_bench PUBLIC gsl )
-    target_include_directories(alex_bench PRIVATE external/psudb-common/cpp/include external/alex/src/core/ benchmarks/include)
-    target_compile_options(alex_bench PUBLIC)
-    set_property(TARGET alex_bench PROPERTY CXX_STANDARD 14)
+    if (build_alex)
+        add_executable(alex_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/alex_bench.cpp)
+        target_link_libraries(alex_bench PUBLIC gsl )
+        target_include_directories(alex_bench PRIVATE external/psudb-common/cpp/include external/alex/src/core/ benchmarks/include)
+        target_compile_options(alex_bench PUBLIC)
+        set_property(TARGET alex_bench PROPERTY CXX_STANDARD 14)
+    endif()
 
     add_executable(mtree_bench_alt ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/mtree_bench_alt.cpp)
     target_link_libraries(mtree_bench_alt PUBLIC gsl pthread atomic gomp)
@@ -280,7 +279,6 @@ if (vldb_bench)
     target_include_directories(thread_scaling_bench PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(thread_scaling_bench PUBLIC -mcx16)
     target_compile_options(thread_scaling_bench PUBLIC)
-
 
     add_executable(btree_thread_scaling_bench
     ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/btree_thread_scaling_bench.cpp)

@@ -38,8 +38,8 @@ public:
     Parameters global_parms;
   };
 
-  typedef Wrapped<R> LocalResultType;
-  typedef R ResultType;
+  typedef std::vector<Wrapped<R>> LocalResultType;
+  typedef std::vector<R> ResultType;
     
   constexpr static bool EARLY_ABORT = true;
   constexpr static bool SKIP_DELETE_FILTER = true;
@@ -65,8 +65,8 @@ public:
     return;
   }
 
-  static std::vector<LocalResultType> local_query(S *shard, LocalQuery *query) {
-    std::vector<LocalResultType> result;
+  static LocalResultType local_query(S *shard, LocalQuery *query) {
+    LocalResultType result;
 
     auto r = shard->point_lookup({query->global_parms.search_key, 0});
 
@@ -77,9 +77,8 @@ public:
     return result;
   }
   
-  static std::vector<LocalResultType>
-  local_query_buffer(LocalQueryBuffer *query) {
-    std::vector<LocalResultType> result;
+  static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
+    LocalResultType result;
 
     for (size_t i = 0; i < query->buffer->get_record_count(); i++) {
       auto rec = query->buffer->get(i);
@@ -95,8 +94,8 @@ public:
   
 
   static void
-  combine(std::vector<std::vector<LocalResultType>> const &local_results,
-          Parameters *parms, std::vector<ResultType> &output) {
+  combine(std::vector<LocalResultType> const &local_results,
+          Parameters *parms, ResultType &output) {
     for (auto r : local_results) {
       if (r.size() > 0) {
         if (r[0].is_deleted() || r[0].is_tombstone()) {
@@ -109,7 +108,7 @@ public:
     }
   }
     
-  static bool repeat(Parameters *parms, std::vector<ResultType> &output,
+  static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {
     return false;

@@ -16,7 +16,7 @@
 namespace de {
 namespace rc {
 
-template <ShardInterface S, bool FORCE_SCAN = true> class Query {
+template <ShardInterface S> class Query {
   typedef typename S::RECORD R;
 
 public:
@@ -75,8 +75,8 @@ public:
     return;
   }
 
-  static std::vector<LocalResultType> local_query(S *shard, LocalQuery *query) {
-    std::vector<LocalResultType> result;
+  static LocalResultType local_query(S *shard, LocalQuery *query) {
+    LocalResultType result = {0, 0};
 
     /*
      * if the returned index is one past the end of the
@@ -88,8 +88,6 @@ public:
     }
 
     auto ptr = shard->get_record_at(query->start_idx);
-    size_t reccnt = 0;
-    size_t tscnt = 0;
 
     /*
      * roll the pointer forward to the first record that is
@@ -104,53 +102,48 @@ public:
            ptr->rec.key <= query->global_parms.upper_bound) {
 
       if (!ptr->is_deleted()) {
-        reccnt++;
+        result.record_count++;
 
         if (ptr->is_tombstone()) {
-          tscnt++;
+          result.tombstone_count++;
         }
       }
 
       ptr++;
     }
 
-    result.push_back({reccnt, tscnt});
     return result;
   }
 
-  static std::vector<LocalResultType>
+  static LocalResultType
   local_query_buffer(LocalQueryBuffer *query) {
 
-    std::vector<LocalResultType> result;
-    size_t reccnt = 0;
-    size_t tscnt = 0;
+    LocalResultType result = {0, 0};
     for (size_t i = 0; i < query->buffer->get_record_count(); i++) {
       auto rec = query->buffer->get(i);
       if (rec->rec.key >= query->global_parms.lower_bound &&
           rec->rec.key <= query->global_parms.upper_bound) {
         if (!rec->is_deleted()) {
-          reccnt++;
+          result.record_count++;
           if (rec->is_tombstone()) {
-            tscnt++;
+            result.tombstone_count++;
           }
         }
       }
     }
 
-    result.push_back({reccnt, tscnt});
-
     return result;
   }
 
   static void
-  combine(std::vector<std::vector<LocalResultType>> const &local_results,
-          Parameters *parms, std::vector<ResultType> &output) {
+  combine(std::vector<LocalResultType> const &local_results,
+          Parameters *parms, ResultType &output) {
     size_t reccnt = 0;
     size_t tscnt = 0;
 
     for (auto &local_result : local_results) {
-      reccnt += local_result[0].record_count;
-      tscnt += local_result[0].tombstone_count;
+      reccnt += local_result.record_count;
+      tscnt += local_result.tombstone_count;
     }
 
     /* if more tombstones than results, clamp the output at 0 */
@@ -158,10 +151,10 @@ public:
       tscnt = reccnt;
     }
 
-    output.push_back({reccnt - tscnt});
+    output = reccnt - tscnt;
   }
 
-  static bool repeat(Parameters *parms, std::vector<ResultType> &output,
+  static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {
     return false;

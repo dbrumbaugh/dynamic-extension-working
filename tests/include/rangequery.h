@@ -99,7 +99,7 @@ START_TEST(t_range_query_merge)
     auto query1 = rq::Query<Shard>::local_preproc(&shard1, &parms);
     auto query2 = rq::Query<Shard>::local_preproc(&shard2, &parms);
 
-    std::vector<std::vector<rq::Query<Shard>::LocalResultType>> results(2);
+    std::vector<rq::Query<Shard>::LocalResultType> results(2);
     results[0] = rq::Query<Shard>::local_query(&shard1, query1);     
     results[1] = rq::Query<Shard>::local_query(&shard2, query2); 
     delete query1;
@@ -116,7 +116,7 @@ START_TEST(t_range_query_merge)
         }
     }
 
-    std::vector<rq::Query<Shard>::ResultType> result;
+    rq::Query<Shard>::ResultType result;
     rq::Query<Shard>::combine(proc_results, nullptr, result);
     std::sort(result.begin(), result.end());
 
@@ -134,41 +134,7 @@ START_TEST(t_range_query_merge)
 }
 END_TEST
 
-
-START_TEST(t_lower_bound)
-{
-    auto buffer1 = create_sequential_mbuffer<R>(100, 200);
-    auto buffer2 = create_sequential_mbuffer<R>(400, 1000);
-
-    auto shard1 = new Shard(buffer1->get_buffer_view());
-    auto shard2 = new Shard(buffer2->get_buffer_view());
-
-    std::vector<Shard*> shards = {shard1, shard2};
-
-    auto merged = Shard(shards);
-
-    for (uint32_t i=100; i<1000; i++) {
-        auto idx = merged.get_lower_bound(i);
-
-        assert(idx < merged.get_record_count());
-
-        auto res = merged.get_record_at(idx);
-
-        if (i >=200 && i <400) {
-            ck_assert_int_lt(res->rec.key, i);
-        } else {
-            ck_assert_int_eq(res->rec.key, i);
-        }
-    }
-
-    delete buffer1;
-    delete buffer2;
-    delete shard1;
-    delete shard2;
-}
-END_TEST
-
-static void inject_rangequery_tests(Suite *suite) {
+[[maybe_unused]] static void inject_rangequery_tests(Suite *suite) {
     TCase *range_query = tcase_create("Range Query Testing"); 
     tcase_add_test(range_query, t_range_query); 
     tcase_add_test(range_query, t_buffer_range_query); 
