@@ -52,16 +52,17 @@ const Timestamp TIMESTAMP_MAX = UINT32_MAX;
 const PageNum INVALID_PNUM = 0;
 const FrameId INVALID_FRID = -1;
 
-/*
- * An ID for a given shard within the index. The level_idx is the index
- * in the memory_levels and disk_levels vectors corresponding to the
- * shard, and the shard_idx is the index with the level (always 0 in the
- * case of leveling). Note that the two vectors of levels are treated
- * as a contiguous index space.
- */
+typedef ssize_t level_index; /* -1 indicates the buffer */
+constexpr level_index buffer_level_idx = -1;
+constexpr level_index invalid_level_idx = -2;
+
+typedef ssize_t shard_index; /* -1 indicates "all" shards on a level */
+constexpr shard_index all_shards_idx = -1;
+constexpr shard_index invalid_shard_idx = -2;
+
 struct ShardID {
-  ssize_t level_idx;
-  ssize_t shard_idx;
+  level_index level_idx;
+  shard_index shard_idx;
 
   friend bool operator==(const ShardID &shid1, const ShardID &shid2) {
     return shid1.level_idx == shid2.level_idx &&
@@ -69,21 +70,25 @@ struct ShardID {
   }
 };
 
-/* 
- * A placeholder for an invalid shard--also used to indicate the 
- * mutable buffer
- */
-const ShardID INVALID_SHID = {-1, -1};
+constexpr ShardID invalid_shard = {invalid_level_idx, invalid_shard_idx};
+constexpr ShardID buffer_shid = {buffer_level_idx, all_shards_idx};
 
-typedef ssize_t level_index;
+enum class ReconstructionType {
+  Invalid, /* placeholder type */
+  Flush, /* a flush of the buffer into L0 */
+  Merge, /* the merging of shards in two seperate levels */
+  Append, /* adding a shard directly to a level */
+  Compact /* the merging of shards on one level */
+};
 
 typedef struct ReconstructionTask {
-  std::vector<level_index> sources;
-  level_index target;
+  std::vector<ShardID> sources = {};
+  level_index target = 0;
   size_t reccnt = 0;
+  ReconstructionType type = ReconstructionType::Invalid;
 
-  void add_source(level_index source, size_t cnt) {
-    sources.push_back(source);
+  void add_shard(ShardID shard, size_t cnt) {
+    sources.push_back(shard);
     reccnt += cnt;
   }
 
@@ -97,40 +102,20 @@ public:
 
   ReconstructionTask operator[](size_t idx) { return m_tasks[idx]; }
 
+  void add_reconstruction(std::vector<ShardID> shards, level_index target,
+                          size_t reccnt, ReconstructionType type) {
+
+    m_tasks.push_back({std::move(shards), target, reccnt, type});
+    
+  }
+
   void add_reconstruction(level_index source, level_index target,
-                          size_t reccnt) {
-    m_tasks.push_back({{source}, target, reccnt});
+                          size_t reccnt, ReconstructionType type) {
+    m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt});
     total_reccnt += reccnt;
   }
 
   void add_reconstruction(ReconstructionTask task) { m_tasks.push_back(task); }
-
-  ReconstructionTask remove_reconstruction(size_t idx) {
-    assert(idx < m_tasks.size());
-    auto task = m_tasks[idx];
-
-    m_tasks.erase(m_tasks.begin() + idx);
-    total_reccnt -= task.reccnt;
-
-    return task;
-  }
-
-  ReconstructionTask remove_smallest_reconstruction() {
-    size_t min_size = m_tasks[0].reccnt;
-    size_t idx = 0;
-    for (size_t i = 1; i < m_tasks.size(); i++) {
-      if (m_tasks[i].reccnt < min_size) {
-        min_size = m_tasks[i].reccnt;
-        idx = i;
-      }
-    }
-
-    auto task = m_tasks[idx];
-    m_tasks.erase(m_tasks.begin() + idx);
-    total_reccnt -= task.reccnt;
-
-    return task;
-  }
 
   size_t get_total_reccnt() { return total_reccnt; }
 
@@ -140,5 +125,7 @@ private:
   std::vector<ReconstructionTask> m_tasks;
   size_t total_reccnt;
 };
+
+enum class DeletePolicy { TOMBSTONE, TAGGING };
 
 } // namespace de

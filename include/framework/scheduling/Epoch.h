@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include <condition_variable>
 #include <mutex>
 
 #include "framework/structure/BufferView.h"
@@ -17,13 +16,12 @@
 
 namespace de {
 
-template <ShardInterface ShardType, QueryInterface<ShardType> QueryType,
-          LayoutPolicy L>
+template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 class Epoch {
 private:
   typedef typename ShardType::RECORD RecordType;
   typedef MutableBuffer<RecordType> Buffer;
-  typedef ExtensionStructure<ShardType, QueryType, L> Structure;
+  typedef ExtensionStructure<ShardType, QueryType> Structure;
   typedef BufferView<RecordType> BufView;
 
 public:

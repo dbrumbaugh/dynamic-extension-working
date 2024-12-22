@@ -8,13 +8,21 @@
  */
 #pragma once
 
+#include "framework/reconstruction/ReconstructionPolicy.h"
+#include "util/types.h"
+#include "framework/interface/Scheduler.h"
 #include <cstdlib>
-#include <utility>
 
 namespace de {
 
-enum class LayoutPolicy { LEVELING, TEIRING, BSM };
+template <ShardInterface ShardType, QueryInterface<ShardType> QueryType,
+DeletePolicy D, SchedulerInterface SchedType>
+class DEConfiguration {
+  DEConfiguration(std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> recon_policy) 
+   : m_recon_policy(recon_policy) {}
 
-enum class DeletePolicy { TOMBSTONE, TAGGING };
+   public:
+    std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> m_recon_policy;
+};
 
 } // namespace de

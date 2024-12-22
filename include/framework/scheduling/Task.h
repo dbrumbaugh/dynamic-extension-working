@@ -19,16 +19,15 @@
 
 #include "framework/scheduling/Epoch.h"
 #include "framework/scheduling/statistics.h"
-#include "framework/util/Configuration.h"
+#include "util/types.h"
 
 namespace de {
 
-template <ShardInterface ShardType, QueryInterface<ShardType> QueryType,
-          LayoutPolicy L>
+template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 struct ReconstructionArgs {
   typedef typename ShardType::RECORD RecordType;
-  Epoch<ShardType, QueryType, L> *epoch;
-  ReconstructionVector merges;
+  Epoch<ShardType, QueryType> *epoch;
+  ReconstructionVector tasks;
   std::promise<bool> result;
   bool compaction;
   void *extension;
