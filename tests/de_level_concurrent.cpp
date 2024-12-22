@@ -17,6 +17,7 @@
 #include "framework/DynamicExtension.h"
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
+#include "framework/reconstruction/LevelingPolicy.h"
 
 #include <check.h>
 using namespace de;
@@ -25,7 +26,9 @@ typedef Rec R;
 typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
 
-typedef DynamicExtension<S, Q, LayoutPolicy::LEVELING, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
+typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
+ReconstructionPolicy<S, Q> *recon = new LevelingPolicy<S, Q>(2, 1000);
+ReconstructionPolicy<S, Q> *recon2 = new LevelingPolicy<S, Q>(4, 10000);
 
 #include "include/concurrent_extension.h"
 

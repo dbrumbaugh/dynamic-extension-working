@@ -82,7 +82,7 @@ public:
         delete[] temp_buffer;
     }
 
-    FSTrie(std::vector<FSTrie*> const &shards) 
+    FSTrie(std::vector<const FSTrie*> const &shards) 
         : m_data(nullptr)
         , m_reccnt(0)
         , m_alloc_size(0)
@@ -181,11 +181,11 @@ public:
     }
 
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return m_fst->getMemoryUsage();
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         return m_alloc_size;
     }
 

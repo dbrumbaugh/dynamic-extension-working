@@ -65,7 +65,7 @@ public:
     }
   }
 
-  ISAMTree(std::vector<ISAMTree *> const &shards)
+  ISAMTree(std::vector<const ISAMTree *> const &shards)
       : m_bf(nullptr), m_isam_nodes(nullptr), m_root(nullptr), m_reccnt(0),
         m_tombstone_cnt(0), m_internal_node_cnt(0), m_deleted_cnt(0),
         m_alloc_size(0) {
@@ -93,7 +93,7 @@ public:
     delete m_bf;
   }
 
-  Wrapped<R> *point_lookup(const R &rec, bool filter = false) {
+  Wrapped<R> *point_lookup(const R &rec, bool filter = false) const {
     if (filter && !m_bf->lookup(rec)) {
       return nullptr;
     }

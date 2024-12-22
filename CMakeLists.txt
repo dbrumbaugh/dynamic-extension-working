@@ -9,10 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(namespace "de")
 project("Practical Dynamic Extension" VERSION 0.1.0)
 
-set(debug false)
+set(debug true)
 set(tests True)
 set(bench false)
-set(vldb_bench true)
+set(vldb_bench false)
 
 # ALEX doesn't build under C++20
 set(build_alex false)
@@ -50,11 +50,6 @@ endif()
 if (tests) 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/tests")
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
-
-    add_executable(internal_level_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/internal_level_tests.cpp)
-    target_link_libraries(internal_level_tests PUBLIC gsl check subunit  pthread atomic)
-    target_link_options(internal_level_tests PUBLIC -mcx16)
-    target_include_directories(internal_level_tests PRIVATE include external/psudb-common/cpp/include)
 
     add_executable(mutable_buffer_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/mutable_buffer_tests.cpp)
     target_link_libraries(mutable_buffer_tests PUBLIC gsl check subunit  pthread atomic)

@@ -67,7 +67,7 @@ START_TEST(t_shard_init)
     auto shard2 = new Shard(mbuffer2->get_buffer_view());
     auto shard3 = new Shard(mbuffer3->get_buffer_view());
 
-    std::vector<Shard*> shards = {shard1, shard2, shard3};
+    std::vector<const Shard*> shards = {shard1, shard2, shard3};
     auto shard4 = new Shard(shards);
 
     ck_assert_int_eq(shard4->get_record_count(), n * 3);

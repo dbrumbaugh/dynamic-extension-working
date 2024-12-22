@@ -40,12 +40,12 @@ public:
    *
    * No changes are made to this level.
    */
-  ShardType *get_combined_shard() {
+  ShardType *get_combined_shard() const {
     if (m_shards.size() == 0) {
       return nullptr;
     }
 
-    std::vector<ShardType *> shards;
+    std::vector<const ShardType *> shards;
     for (auto shard : m_shards) {
       if (shard)
         shards.emplace_back(shard.get());
@@ -57,7 +57,7 @@ public:
   void get_local_queries(
       std::vector<std::pair<ShardID, ShardType *>> &shards,
       std::vector<typename QueryType::LocalQuery *> &local_queries,
-      typename QueryType::Parameters *query_parms) {
+      typename QueryType::Parameters *query_parms) const {
     for (size_t i = 0; i < m_shards.size(); i++) {
       if (m_shards[i]) {
         auto local_query =
@@ -68,7 +68,7 @@ public:
     }
   }
 
-  bool check_tombstone(size_t shard_stop, const RecordType &rec) {
+  bool check_tombstone(size_t shard_stop, const RecordType &rec) const {
     if (m_shards.size() == 0)
       return false;
 
@@ -100,7 +100,7 @@ public:
     return false;
   }
 
-  ShardType *get_shard(size_t idx) {
+  const ShardType *get_shard(size_t idx) const {
     if (idx >= m_shards.size()) {
       return nullptr;
     }
@@ -108,9 +108,9 @@ public:
     return m_shards[idx].get();
   }
 
-  size_t get_shard_count() { return m_shards.size(); }
+  size_t get_shard_count() const { return m_shards.size(); }
 
-  size_t get_record_count() {
+  size_t get_record_count() const {
     size_t cnt = 0;
     for (size_t i = 0; i < m_shards.size(); i++) {
       if (m_shards[i]) {
@@ -121,7 +121,7 @@ public:
     return cnt;
   }
 
-  size_t get_tombstone_count() {
+  size_t get_tombstone_count() const {
     size_t res = 0;
     for (size_t i = 0; i < m_shards.size(); ++i) {
       if (m_shards[i]) {
@@ -131,7 +131,7 @@ public:
     return res;
   }
 
-  size_t get_aux_memory_usage() {
+  size_t get_aux_memory_usage() const {
     size_t cnt = 0;
     for (size_t i = 0; i < m_shards.size(); i++) {
       if (m_shards[i]) {
@@ -142,7 +142,7 @@ public:
     return cnt;
   }
 
-  size_t get_memory_usage() {
+  size_t get_memory_usage() const {
     size_t cnt = 0;
     for (size_t i = 0; i < m_shards.size(); i++) {
       if (m_shards[i]) {
@@ -153,7 +153,7 @@ public:
     return cnt;
   }
 
-  double get_tombstone_prop() {
+  double get_tombstone_prop() const {
     size_t tscnt = 0;
     size_t reccnt = 0;
     for (size_t i = 0; i < m_shards.size(); i++) {
@@ -166,10 +166,10 @@ public:
     return (double)tscnt / (double)(tscnt + reccnt);
   }
 
-  std::shared_ptr<InternalLevel> clone() {
+  std::shared_ptr<InternalLevel> clone() const {
     auto new_level = std::make_shared<InternalLevel>(m_level_no);
     for (size_t i = 0; i < m_shards.size(); i++) {
-      new_level->m_shards[i] = m_shards[i];
+      new_level->append(m_shards[i]);
     }
 
     return new_level;
@@ -181,7 +181,7 @@ public:
     m_shards.erase(m_shards.begin() + shard);
   }
 
-  bool append(std::shared_ptr<ShardType> shard) {
+  void append(std::shared_ptr<ShardType> shard) {
     m_shards.emplace_back(shard);
   }
 

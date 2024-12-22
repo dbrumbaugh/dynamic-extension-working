@@ -70,7 +70,7 @@ public:
         }
     }
 
-    Alias(std::vector<Alias*> const &shards)
+    Alias(std::vector<const Alias*> const &shards)
         : m_data(nullptr)
         , m_alias(nullptr)
         , m_total_weight(0)
@@ -146,15 +146,15 @@ public:
     }
 
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return 0;
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         return (m_bf) ? m_bf->memory_usage() : 0;
     }
 
-    W get_total_weight() {
+    W get_total_weight() const {
         return m_total_weight;
     }
 

@@ -22,24 +22,28 @@
  * should be included in the source file that includes this one, above the
  * include statement.
  */
-// #include "testing.h"
-// #include "framework/DynamicExtension.h"
-// //#include "framework/scheduling/FIFOScheduler.h"
-// #include "shard/ISAMTree.h"
-// #include "query/rangequery.h"
-// #include <check.h>
-// #include <set>
-// #include <random>
+#include "framework/reconstruction/ReconstructionPolicy.h"
+#include "framework/reconstruction/TieringPolicy.h"
+#include "testing.h"
+#include "framework/DynamicExtension.h"
+#include "framework/scheduling/FIFOScheduler.h"
+#include "shard/ISAMTree.h"
+#include "query/rangequery.h"
+#include <check.h>
+#include <set>
+#include <random>
 
 // using namespace de;
 // typedef Rec R;
 // typedef ISAMTree<R> S;
 // typedef rq::Query<S> Q;
-// typedef DynamicExtension<S, Q, LayoutPolicy::LEVELING, DeletePolicy::TOMBSTONE> DE; //, FIFOScheduler> DE;
+// typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, FIFOScheduler> DE;
+// ReconstructionPolicy<S,Q> *recon = new TieringPolicy<S, Q>(2, 1000);
+// ReconstructionPolicy<S,Q> *recon2 = new TieringPolicy<S, Q>(4, 10000);
 
 START_TEST(t_create)
 {
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     ck_assert_ptr_nonnull(test_de);
     ck_assert_int_eq(test_de->get_record_count(), 0);
@@ -52,7 +56,7 @@ END_TEST
 
 START_TEST(t_insert)
 {
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -73,7 +77,7 @@ END_TEST
 
 START_TEST(t_debug_insert)
 {
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -92,7 +96,7 @@ END_TEST
 
 START_TEST(t_insert_with_mem_merges)
 {
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -135,7 +139,7 @@ END_TEST
 
 START_TEST(t_range_query)
 {
-    auto test_de = new DE(1000, 10000, 4);
+    auto test_de = new DE(recon2, 1000, 10000);
     size_t n = 10000000;
 
     std::vector<uint64_t> keys;
@@ -189,7 +193,7 @@ END_TEST
 START_TEST(t_tombstone_merging_01)
 {
     size_t reccnt = 100000;
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     auto rng = gsl_rng_alloc(gsl_rng_mt19937);
 
@@ -242,54 +246,12 @@ START_TEST(t_tombstone_merging_01)
 }
 END_TEST
 
-DE *create_test_tree(size_t reccnt, size_t memlevel_cnt) {
-    auto rng = gsl_rng_alloc(gsl_rng_mt19937);
-
-    auto test_de = new DE(1000, 10000, 2);
-
-    std::set<R> records; 
-    std::set<R> to_delete;
-    std::set<R> deleted;
-
-    while (records.size() < reccnt) {
-        uint64_t key = rand();
-        uint32_t val = rand();
-
-        if (records.find({key, val}) != records.end()) continue;
-
-        records.insert({key, val});
-    }
-
-    for (auto rec : records) {
-        ck_assert_int_eq(test_de->insert(rec), 1);
-
-         if (gsl_rng_uniform(rng) < 0.05 && !to_delete.empty()) {
-            std::vector<R> del_vec;
-            std::sample(to_delete.begin(), to_delete.end(), std::back_inserter(del_vec), 3, std::mt19937{std::random_device{}()});
-
-            for (size_t i=0; i<del_vec.size(); i++) {
-                test_de->erase(del_vec[i]);
-                to_delete.erase(del_vec[i]);
-                deleted.insert(del_vec[i]);
-            }
-        }
-
-        if (gsl_rng_uniform(rng) < 0.25 && deleted.find(rec) == deleted.end()) {
-            to_delete.insert(rec);
-        }
-    }
-
-    gsl_rng_free(rng);
-
-    return test_de;
-}
-
 START_TEST(t_static_structure)
 {
     auto rng = gsl_rng_alloc(gsl_rng_mt19937);
 
     size_t reccnt = 100000;
-    auto test_de = new DE(100, 1000, 2);
+    auto test_de = new DE(recon, 100, 1000);
 
     std::set<R> records; 
     std::set<R> to_delete;

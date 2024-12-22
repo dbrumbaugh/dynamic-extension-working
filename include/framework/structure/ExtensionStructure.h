@@ -147,14 +147,14 @@ public:
 
   inline void perform_reconstruction(ReconstructionTask task) {
     /* perform the reconstruction itself */
-    std::vector<ShardType *> shards;
+    std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
-      assert(shid.level_idx < m_levels.size());
+      assert(shid.level_idx < (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
 
       /* if unspecified, push all shards into the vector */
       if (shid.shard_idx == all_shards_idx) {
-        for (size_t i = 0; i < m_levels[shid.level_idx].get_shard_count();
+        for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count();
              i++) {
           if (m_levels[shid.level_idx]->get_shard(i)) {
             shards.push_back(m_levels[shid.level_idx]->get_shard(i));
@@ -165,7 +165,7 @@ public:
       }
     }
 
-    auto new_shard = Shard(shards);
+    auto new_shard = new ShardType(shards);
 
     /*
      * Remove all of the shards processed by the operation
@@ -181,10 +181,11 @@ public:
     /*
      * Append the new shard to the target level
      */
-    if (task.target < m_levels.size()) {
-      m_levels[task.target]->append_shard(new_shard);
-    } else {
-      m_levels.push_back();
+    if (task.target < (level_index)m_levels.size()) {
+      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard));
+    } else { /* grow the structure if needed */
+      m_levels.push_back(std::make_shared<InternalLevel<ShardType, QueryType>>(task.target));
+      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard));
     }
   }
 
@@ -197,12 +198,20 @@ public:
      * the buffer itself. Given that we're unlikely to actually use policies
      * like that, we'll leave this as low priority.
      */
-    ShardType *buffer_shard = new ShardType(buffer);
-    if (task.type == ReconstructionType::Append) {
-      m_levels[0]->append(std::shared_ptr(buffer_shard));
+
+    /* insert the first level, if needed */
+    if (m_levels.size() == 0) {
+      m_levels.push_back(
+          std::make_shared<InternalLevel<ShardType, QueryType>>(0));
+    }
+
+    ShardType *buffer_shard = new ShardType(std::move(buffer));
+    if (task.type == ReconstructionType::Append || m_levels[0]->get_shard_count() == 0) {
+      m_levels[0]->append(std::shared_ptr<ShardType>(buffer_shard));
     } else {
-      std::vector<ShardType *> shards;
-      for (size_t i = 0; i < m_levels[0].size(); i++) {
+      std::vector<const ShardType *> shards;
+      for (level_index i = 0; i < (level_index)m_levels[0]->get_shard_count();
+           i++) {
         if (m_levels[0]->get_shard(i)) {
           shards.push_back(m_levels[0]->get_shard(i));
         }
@@ -210,7 +219,7 @@ public:
         shards.push_back(buffer_shard);
         ShardType *new_shard = new ShardType(shards);
         m_levels[0]->truncate();
-        m_levels[0]->append(std::shared_ptr(new_shard));
+        m_levels[0]->append(std::shared_ptr<ShardType>(new_shard));
       }
     }
   }
@@ -242,6 +251,32 @@ public:
   }
 
   LevelVector const &get_level_vector() const { return m_levels; }
+
+  
+    /*
+     * Validate that no level in the structure exceeds its maximum tombstone
+     * capacity. This is used to trigger preemptive compactions at the end of
+     * the reconstruction process.
+     */
+    bool validate_tombstone_proportion(double max_delete_prop) const {
+      long double ts_prop;
+      for (size_t i = 0; i < m_levels.size(); i++) {
+        if (m_levels[i]) {
+          ts_prop = (long double)m_levels[i]->get_tombstone_count() /
+                    (long double)m_levels[i]->get_record_count();
+          if (ts_prop > (long double)max_delete_prop) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    bool validate_tombstone_proportion(level_index level, double max_delete_prop) const {
+        long double ts_prop =  (long double) m_levels[level]->get_tombstone_count() / (long double) m_levels[level]->get_record_count();
+        return ts_prop <= (long double) max_delete_prop;
+    }
 
 private:
   std::atomic<size_t> m_refcnt;

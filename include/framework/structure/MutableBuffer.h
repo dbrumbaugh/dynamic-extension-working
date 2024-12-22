@@ -97,15 +97,15 @@ public:
     return true;
   }
 
-  size_t get_record_count() { return m_tail.load() - m_head.load().head_idx; }
+  size_t get_record_count() const { return m_tail.load() - m_head.load().head_idx; }
 
-  size_t get_capacity() { return m_cap; }
+  size_t get_capacity() const { return m_cap; }
 
-  bool is_full() { return get_record_count() >= m_hwm; }
+  bool is_full() const { return get_record_count() >= m_hwm; }
 
-  bool is_at_low_watermark() { return get_record_count() >= m_lwm; }
+  bool is_at_low_watermark() const { return get_record_count() >= m_lwm; }
 
-  size_t get_tombstone_count() { return m_tscnt.load(); }
+  size_t get_tombstone_count() const { return m_tscnt.load(); }
 
   bool delete_record(const R &rec) {
     return get_buffer_view().delete_record(rec);
@@ -115,9 +115,9 @@ public:
     return get_buffer_view().check_tombstone(rec);
   }
 
-  size_t get_memory_usage() { return m_cap * sizeof(Wrapped<R>); }
+  size_t get_memory_usage() const { return m_cap * sizeof(Wrapped<R>); }
 
-  size_t get_aux_memory_usage() {
+  size_t get_aux_memory_usage() const {
     return m_tombstone_filter->get_memory_usage();
   }
 
@@ -200,7 +200,7 @@ public:
     m_lwm = lwm;
   }
 
-  size_t get_low_watermark() { return m_lwm; }
+  size_t get_low_watermark() const { return m_lwm; }
 
   void set_high_watermark(size_t hwm) {
     assert(hwm > m_lwm);
@@ -208,9 +208,9 @@ public:
     m_hwm = hwm;
   }
 
-  size_t get_high_watermark() { return m_hwm; }
+  size_t get_high_watermark() const { return m_hwm; }
 
-  size_t get_tail() { return m_tail.load(); }
+  size_t get_tail() const { return m_tail.load(); }
 
   /*
    * Note: this returns the available physical storage capacity,
@@ -220,7 +220,7 @@ public:
    * but a buggy framework implementation may violate the
    * assumption.
    */
-  size_t get_available_capacity() {
+  size_t get_available_capacity() const {
     if (m_old_head.load().refcnt == 0) {
       return m_cap - (m_tail.load() - m_head.load().head_idx);
     }

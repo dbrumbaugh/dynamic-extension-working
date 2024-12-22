@@ -23,8 +23,8 @@ class ReconstructionPolicy {
 
 public:
   ReconstructionPolicy() {}
-  virtual ReconstructionVector get_reconstruction_tasks(Epoch<ShardType, QueryType> *epoch, 
-                                                        size_t incoming_reccnt) = 0;
-  virtual ReconstructionTask get_flush_task(Epoch<ShardType, QueryType> *epoch) = 0;
+  virtual ReconstructionVector get_reconstruction_tasks(const Epoch<ShardType, QueryType> *epoch, 
+                                                        size_t incoming_reccnt) const = 0;
+  virtual ReconstructionTask get_flush_task(const Epoch<ShardType, QueryType> *epoch) const = 0;
   };
 }

@@ -86,7 +86,7 @@ public:
         }
     }
 
-    VPTree(std::vector<VPTree*> shards) 
+    VPTree(std::vector<const VPTree*> shards) 
     : m_reccnt(0), m_tombstone_cnt(0), m_node_cnt(0), m_root(nullptr) {
 
         size_t attemp_reccnt = 0;
@@ -174,11 +174,11 @@ public:
         return m_data + idx;
     }
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return m_node_cnt * sizeof(vpnode) + m_reccnt * sizeof(R*);
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         // FIXME: need to return the size of the unordered_map
         return 0;
     }

@@ -111,7 +111,7 @@ public:
         }
     }
 
-    PGM(std::vector<PGM*> const &shards)
+    PGM(std::vector<const PGM*> const &shards)
         : m_data(nullptr)
         , m_bf(nullptr)
         , m_reccnt(0)
@@ -190,7 +190,7 @@ public:
         delete m_bf;
     }
 
-    Wrapped<R> *point_lookup(const R &rec, bool filter=false) {
+    Wrapped<R> *point_lookup(const R &rec, bool filter=false) const {
         size_t idx = get_lower_bound(rec.key);
         if (idx >= m_reccnt) {
             return nullptr;
@@ -223,11 +223,11 @@ public:
     }
 
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return m_pgm.size_in_bytes();
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         return (m_bf) ? m_bf->memory_usage() : 0;
     }
 

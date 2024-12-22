@@ -18,6 +18,8 @@
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
 
+#include "framework/reconstruction/BSMPolicy.h"
+
 #include <check.h>
 using namespace de;
 
@@ -25,7 +27,8 @@ typedef Rec R;
 typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
 
-typedef DynamicExtension<S, Q, LayoutPolicy::BSM, DeletePolicy::TAGGING, SerialScheduler> DE;
+typedef DynamicExtension<S, Q, DeletePolicy::TAGGING, SerialScheduler> DE;
+ReconstructionPolicy<S,Q> *recon = new BSMPolicy<S,Q>(1000);
 
 #include "include/dynamic_extension.h"
 

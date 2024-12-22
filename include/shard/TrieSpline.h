@@ -124,7 +124,7 @@ public:
         }
     }
 
-    TrieSpline(std::vector<TrieSpline*> const &shards) 
+    TrieSpline(std::vector<const TrieSpline*> const &shards) 
         : m_reccnt(0)
         , m_tombstone_cnt(0)
         , m_alloc_size(0)
@@ -229,7 +229,7 @@ public:
         delete m_bf;
     }
 
-    Wrapped<R> *point_lookup(const R &rec, bool filter=false) {
+    Wrapped<R> *point_lookup(const R &rec, bool filter=false) const {
         if (filter && m_bf && !m_bf->lookup(rec)) {
             return nullptr;
         }
@@ -266,11 +266,11 @@ public:
     }
 
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return m_ts.GetSize();
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         return (m_bf) ? m_bf->memory_usage() : 0;
     }
 

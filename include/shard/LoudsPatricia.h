@@ -82,7 +82,7 @@ public:
         delete[] temp_buffer;
     }
 
-    LoudsPatricia(std::vector<LoudsPatricia*> &shards) 
+    LoudsPatricia(std::vector<const LoudsPatricia*> &shards) 
         : m_data(nullptr)
         , m_reccnt(0)
         , m_alloc_size(0)
@@ -178,11 +178,11 @@ public:
     }
 
 
-    size_t get_memory_usage() {
+    size_t get_memory_usage() const {
         return m_louds->size();
     }
 
-    size_t get_aux_memory_usage() {
+    size_t get_aux_memory_usage() const {
         return m_alloc_size;
     }
 

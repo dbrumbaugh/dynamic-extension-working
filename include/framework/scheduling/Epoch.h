@@ -54,11 +54,13 @@ public:
   Epoch &operator=(const Epoch &) = delete;
   Epoch &operator=(Epoch &&) = delete;
 
-  size_t get_epoch_number() { return m_epoch_number; }
+  size_t get_epoch_number() const { return m_epoch_number; }
 
-  Structure *get_structure() { return m_structure; }
+  const Structure *get_structure() const { return m_structure; }
 
-  BufView get_buffer() { return m_buffer->get_buffer_view(m_buffer_head); }
+  Structure *get_mutable_structure() { return m_structure; }
+
+  BufView get_buffer() const { return m_buffer->get_buffer_view(m_buffer_head); }
 
   /*
    * Returns a new Epoch object that is a copy of this one. The new object

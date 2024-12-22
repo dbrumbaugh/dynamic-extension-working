@@ -18,6 +18,7 @@
 #include "framework/scheduling/SerialScheduler.h"
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
+#include "framework/reconstruction/TieringPolicy.h"
 
 #include <check.h>
 using namespace de;
@@ -26,7 +27,8 @@ typedef Rec R;
 typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
 
-typedef DynamicExtension<S, Q, LayoutPolicy::TEIRING, DeletePolicy::TAGGING, SerialScheduler> DE;
+typedef DynamicExtension<S, Q, DeletePolicy::TAGGING, SerialScheduler> DE;
+ReconstructionPolicy<S, Q> *recon = new TieringPolicy<S, Q>(2, 1000);
 
 #include "include/dynamic_extension.h"
 
