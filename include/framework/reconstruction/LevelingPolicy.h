@@ -59,7 +59,7 @@ public:
 
 private:
   level_index find_reconstruction_target(LevelVector &levels) const {
-    level_index target_level = 0;
+    level_index target_level = invalid_level_idx;
     size_t incoming_records = m_buffer_size;
 
     for (level_index i = 0; i < (level_index)levels.size(); i++) {

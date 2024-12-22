@@ -56,15 +56,15 @@ public:
   ReconstructionTask
   get_flush_task(const Epoch<ShardType, QueryType> *epoch) const override {
     return ReconstructionTask{
-        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Flush};
+        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Merge};
   }
 
 private:
   level_index find_reconstruction_target(LevelVector &levels) const {
-    level_index target_level = 0;
+    level_index target_level = invalid_level_idx;
 
     for (level_index i = 0; i < (level_index)levels.size(); i++) {
-      if (levels[i]->get_record_count() + 1 <= capacity(i)) {
+      if (levels[i]->get_record_count() + m_buffer_size <= capacity(i)) {
         target_level = i;
         break;
       }
