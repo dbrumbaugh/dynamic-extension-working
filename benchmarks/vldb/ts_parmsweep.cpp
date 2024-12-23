@@ -19,8 +19,8 @@
 typedef de::Record<uint64_t, uint64_t> Rec;
 typedef de::TrieSpline<Rec> Shard;
 typedef de::rc::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::TEIRING, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::LEVELING, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext2;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext2;
 typedef Q::Parameters QP;
 
 void usage(char *progname) {

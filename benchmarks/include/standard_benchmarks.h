@@ -19,11 +19,29 @@
 #include "benchmark_types.h"
 #include "psu-util/bentley-saxe.h"
 #include "shard/ISAMTree.h"
+#include "framework/reconstruction/LevelingPolicy.h"
+#include "framework/reconstruction/TieringPolicy.h"
+#include "framework/reconstruction/BSMPolicy.h"
 
+constexpr double delete_proportion = 0.05;
 static size_t g_deleted_records = 0;
-static double delete_proportion = 0.5;
+static size_t total = 0;
 
-static volatile size_t total = 0;
+template<de::ShardInterface S, de::QueryInterface<S> Q>
+de::ReconstructionPolicy<S, Q> *get_policy(size_t scale_factor, size_t buffer_size, int policy=0) {
+
+    de::ReconstructionPolicy<S, Q> *recon = nullptr;
+    
+    if (policy == 0) {
+        recon = new de::TieringPolicy<S,Q>(scale_factor, buffer_size);
+    } else if (policy == 1) {
+        recon = new de::LevelingPolicy<S, Q>(scale_factor, buffer_size);
+    } else if (policy == 2) {
+        recon = new de::BSMPolicy<S, Q>(buffer_size);
+    } 
+
+    return recon;
+}
 
 template<typename DE, typename Q, bool BSM=false>
 static void run_queries(DE *extension, std::vector<typename Q::Parameters> &queries) {

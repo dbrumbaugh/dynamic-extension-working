@@ -63,7 +63,7 @@ public:
         std::sort(base, stop, std::less<Wrapped<R>>());
 
         for (size_t i=0; i<buffer.get_record_count(); i++) {
-            if (temp_buffer[i].is_deleted() || !temp_buffer[i].is_visible() || temp_buffer[i].rec.key == "") {
+            if (temp_buffer[i].is_deleted() || !temp_buffer[i].is_visible() || temp_buffer[i].rec.key[0] != '\0') {
                 continue;
             }
 
@@ -124,7 +124,7 @@ public:
             } else {
                 auto& cursor = cursors[now.version];
                 /* skip over records that have been deleted via tagging */
-                if (!cursor.ptr->is_deleted() && cursor.ptr->rec.key != "") {
+                if (!cursor.ptr->is_deleted() && cursor.ptr->rec.key[0] != '\0') {
                     m_data[m_reccnt] = *cursor.ptr;
                     keys.push_back(std::string(m_data[m_reccnt].rec.key));
 

@@ -20,8 +20,8 @@ typedef Word2VecRec Rec;
 
 typedef de::VPTree<Rec, 100, true> Shard;
 typedef de::knn::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::TEIRING, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::LEVELING, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext2;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext2;
 typedef Q::Parameters QP;
 
 void usage(char *progname) {

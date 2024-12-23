@@ -20,7 +20,7 @@
 typedef de::Record<const char *, uint64_t> Rec;
 typedef de::FSTrie<Rec> Shard;
 typedef de::pl::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::BSM, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
 typedef Q::Parameters QP;
 
 void usage(char *progname) {
@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
     size_t n = atol(argv[1]);
     std::string d_fname = std::string(argv[2]);
 
-    auto extension = new Ext(1, 12001, 2, 0, 64);
+    auto policy = get_policy<Shard, Q>(2, 1, 3);
+    auto extension = new Ext(policy, 1);
     gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
     auto strings = read_string_file(d_fname, n);

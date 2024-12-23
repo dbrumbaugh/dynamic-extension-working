@@ -20,7 +20,7 @@ typedef Word2VecRec Rec;
 
 typedef de::VPTree<Rec, 100, true> Shard;
 typedef de::knn::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::TEIRING, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TAGGING, de::SerialScheduler> Ext;
 typedef Q::Parameters QP;
 
 void usage(char *progname) {
@@ -38,7 +38,8 @@ int main(int argc, char **argv) {
     std::string d_fname = std::string(argv[2]);
     std::string q_fname = std::string(argv[3]);
 
-    auto extension = new Ext(1400, 1400, 8, 0, 64);
+    auto policy = get_policy<Shard, Q>(1400, 8);
+    auto extension = new Ext(policy, 1400); 
     gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
     fprintf(stderr, "[I] Reading data file...\n");

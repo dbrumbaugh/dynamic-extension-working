@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(CMAKE_C_COMPILER gcc)
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -12,7 +12,7 @@ project("Practical Dynamic Extension" VERSION 0.1.0)
 set(debug true)
 set(tests True)
 set(bench false)
-set(vldb_bench false)
+set(vldb_bench true)
 
 # ALEX doesn't build under C++20
 set(build_alex false)
@@ -22,7 +22,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_FLAGS=-latomic -mcx16)
 
-add_compile_options(-Iinclude -Iexternal/PLEX/include -Iexternal -mcx16 -march=native -Werror) # -fconcepts-diagnostics-depth=3)
+add_compile_options(-Iinclude -Iexternal/PLEX/include -Iexternal -mcx16 -march=native -Werror -Wno-attributes) # -fconcepts-diagnostics-depth=3)
 
 find_package(OpenMP REQUIRED)
 add_compile_options(${OpenMP_CXX_FLAGS})
@@ -177,11 +177,11 @@ if (vldb_bench)
     target_compile_options(vptree_bench_alt PUBLIC)
 
 
-    add_executable(vptree_parmsweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/vptree_parmsweep.cpp)
-    target_link_libraries(vptree_parmsweep PUBLIC gsl pthread atomic)
-    target_include_directories(vptree_parmsweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
-    target_link_options(vptree_parmsweep PUBLIC -mcx16)
-    target_compile_options(vptree_parmsweep PUBLIC)
+    # add_executable(vptree_parmsweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/vptree_parmsweep.cpp)
+    # target_link_libraries(vptree_parmsweep PUBLIC gsl pthread atomic)
+    # target_include_directories(vptree_parmsweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    # target_link_options(vptree_parmsweep PUBLIC -mcx16)
+    # target_compile_options(vptree_parmsweep PUBLIC)
 
     add_executable(vptree_bsm_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/vptree_bsm_bench.cpp)
     target_link_libraries(vptree_bsm_bench PUBLIC gsl pthread atomic)
@@ -213,11 +213,11 @@ if (vldb_bench)
     target_link_options(ts_bench PUBLIC -mcx16)
     target_compile_options(ts_bench PUBLIC)
 
-    add_executable(ts_parmsweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/ts_parmsweep.cpp)
-    target_link_libraries(ts_parmsweep PUBLIC gsl pthread atomic)
-    target_include_directories(ts_parmsweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
-    target_link_options(ts_parmsweep PUBLIC -mcx16)
-    target_compile_options(ts_parmsweep PUBLIC)
+    # add_executable(ts_parmsweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/ts_parmsweep.cpp)
+    # target_link_libraries(ts_parmsweep PUBLIC gsl pthread atomic)
+    # target_include_directories(ts_parmsweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    # target_link_options(ts_parmsweep PUBLIC -mcx16)
+    # target_compile_options(ts_parmsweep PUBLIC)
 
     add_executable(ts_bsm_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/ts_bsm_bench.cpp)
     target_link_libraries(ts_bsm_bench PUBLIC gsl pthread atomic)
@@ -269,11 +269,11 @@ if (vldb_bench)
     target_link_options(mtree_bench PUBLIC -mcx16)
     target_compile_options(mtree_bench PUBLIC)
 
-    add_executable(thread_scaling_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/thread_scaling_bench.cpp)
-    target_link_libraries(thread_scaling_bench PUBLIC gsl pthread atomic)
-    target_include_directories(thread_scaling_bench PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
-    target_link_options(thread_scaling_bench PUBLIC -mcx16)
-    target_compile_options(thread_scaling_bench PUBLIC)
+    # add_executable(thread_scaling_bench ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/thread_scaling_bench.cpp)
+    # target_link_libraries(thread_scaling_bench PUBLIC gsl pthread atomic)
+    # target_include_directories(thread_scaling_bench PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    # target_link_options(thread_scaling_bench PUBLIC -mcx16)
+    # target_compile_options(thread_scaling_bench PUBLIC)
 
     add_executable(btree_thread_scaling_bench
     ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/vldb/btree_thread_scaling_bench.cpp)

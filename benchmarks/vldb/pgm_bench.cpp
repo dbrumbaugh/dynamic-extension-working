@@ -21,7 +21,7 @@
 typedef de::Record<uint64_t, uint64_t> Rec;
 typedef de::PGM<Rec> Shard;
 typedef de::rc::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::LayoutPolicy::TEIRING, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
 typedef Q::Parameters QP;
 
 void usage(char *progname) {
@@ -39,7 +39,8 @@ int main(int argc, char **argv) {
     std::string d_fname = std::string(argv[2]);
     std::string q_fname = std::string(argv[3]);
 
-    auto extension = new Ext(12000, 12001, 8, 0, 64);
+    auto policy = get_policy<Shard, Q>(12000, 8);
+    auto extension = new Ext(policy, 12000);
     gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
     auto data = read_sosd_file<Rec>(d_fname, n);

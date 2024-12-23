@@ -19,9 +19,9 @@
 
 
 typedef de::Record<int64_t, int64_t> Rec;
-typedef de::ISAMTree<Rec> ISAM;
-typedef de::irs::Query<ISAM> Q;
-typedef de::DynamicExtension<ISAM, Q> Ext;
+typedef de::ISAMTree<Rec> Shard;
+typedef de::irs::Query<Shard> Q;
+typedef de::DynamicExtension<Shard, Q> Ext;
 typedef Q::Parameters QP;
 
 std::atomic<bool> inserts_done = false;
@@ -73,7 +73,8 @@ int main(int argc, char **argv) {
     std::string d_fname = std::string(argv[4]);
     std::string q_fname = std::string(argv[5]);
 
-    auto extension = new Ext(1000, 12000, 8, 0, 64);
+    auto policy = get_policy<Shard, Q>(12000, 8);
+    auto extension = new Ext(policy, 1000, 12000, 8, 0, 64);
     gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
     auto data = read_sosd_file<Rec>(d_fname, n);
