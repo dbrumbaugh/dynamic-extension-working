@@ -179,6 +179,7 @@ static void insert_records(DE *structure, size_t start, size_t stop,
             delete_idx++;
             g_deleted_records++;
         }
+        psudb::progress_update((double) i / (double)(stop - start), "Insert Progress");
     }
 
     psudb::progress_update(1, "Insert Progress");

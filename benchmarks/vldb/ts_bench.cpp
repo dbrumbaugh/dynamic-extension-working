@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     std::string d_fname = std::string(argv[2]);
     std::string q_fname = std::string(argv[3]);
 
-    auto policy = get_policy<Shard, Q>(8000, 8);
+    auto policy = get_policy<Shard, Q>(8, 8000);
     auto extension = new Ext(policy, 8000);
     gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
