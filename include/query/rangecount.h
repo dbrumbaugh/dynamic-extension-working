@@ -125,9 +125,10 @@ public:
       if (rec->rec.key >= query->global_parms.lower_bound &&
           rec->rec.key <= query->global_parms.upper_bound) {
         if (!rec->is_deleted()) {
-          result.record_count++;
           if (rec->is_tombstone()) {
             result.tombstone_count++;
+          } else {
+            result.record_count++;
           }
         }
       }
