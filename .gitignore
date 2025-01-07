@@ -9,3 +9,6 @@ data
 tests/data
 
 .vscode
+
+data/*
+queries/*
