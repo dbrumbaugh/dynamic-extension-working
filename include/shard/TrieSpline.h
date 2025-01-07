@@ -71,8 +71,8 @@ public:
 
         merge_info info = {0, 0};
 
-        m_min_key = tmp_max_key;
-        m_max_key = tmp_min_key;
+        m_min_key = tmp_min_key;
+        m_max_key = tmp_max_key;
 
         /* 
          * Iterate over the temporary buffer to process the records, copying
@@ -80,18 +80,15 @@ public:
          */
         while (base < stop) {
             if (!base->is_tombstone() && (base + 1 < stop)
-                && base->rec == (base + 1)->rec  && (base + 1)->is_tombstone()) {
+                && base->rec == (base + 1)->rec  && (base + 1)->is_tombstone()
+                && base->rec.key != m_max_key && base->rec.key != m_min_key) {
                 base += 2;
                 continue;
-            } else if (base->is_deleted()) {
+            } else if (base->is_deleted() && base->rec.key != m_max_key && base->rec.key != m_min_key) {
                 base += 1;
                 continue;
             }
 
-            // FIXME: this shouldn't be necessary, but the tagged record
-            // bypass doesn't seem to be working on this code-path, so this
-            // ensures that tagged records from the buffer are able to be
-            // dropped, eventually. It should only need to be &= 1
             base->header &= 3;
             bldr.AddKey(base->rec.key);
             m_data[info.record_count++] = *base;
@@ -101,14 +98,6 @@ public:
                 if (m_bf){
                     m_bf->insert(base->rec);
                 }
-            }
-
-            if (base->rec.key < m_min_key) {
-                m_min_key = base->rec.key;
-            } 
-
-            if (base->rec.key > m_max_key) {
-                m_max_key = base->rec.key;
             }
 
             base++;
@@ -162,8 +151,8 @@ public:
 
         auto bldr = ts::Builder<K>(tmp_min_key, tmp_max_key, E);
 
-        m_max_key = tmp_min_key;
-        m_min_key = tmp_max_key;
+        m_max_key = tmp_max_key;
+        m_min_key = tmp_min_key;
 
         merge_info info = {0, 0};
         while (pq.size()) {
@@ -173,10 +162,13 @@ public:
              * if the current record is not a tombstone, and the next record is
              * a tombstone that matches the current one, then the current one
              * has been deleted, and both it and its tombstone can be skipped
-             * over.
+             * over. Unless the tombstone would remove the maximum or
+             * minimum valued key, which cannot be removed at this point 
+             * without breaking triespline
              */
             if (!now.data->is_tombstone() && next.data != nullptr &&
-                now.data->rec == next.data->rec && next.data->is_tombstone()) {
+                now.data->rec == next.data->rec && next.data->is_tombstone()
+                && now.data->rec.key != tmp_max_key && now.data->rec.key != tmp_min_key) {
                 
                 pq.pop(); pq.pop();
                 auto& cursor1 = cursors[now.version];
@@ -185,8 +177,13 @@ public:
                 if (advance_cursor(cursor2)) pq.push(cursor2.ptr, next.version);
             } else {
                 auto& cursor = cursors[now.version];
-                /* skip over records that have been deleted via tagging */
-                if (!cursor.ptr->is_deleted()) {
+                /* 
+                 * skip over records that have been deleted via tagging,
+                 * unless they are the max or min keys, which cannot be
+                 * removed without breaking triespline                 
+                 */
+                if (!cursor.ptr->is_deleted() || 
+                     cursor.ptr->rec.key == tmp_max_key || cursor.ptr->rec.key == tmp_min_key) {
                     bldr.AddKey(cursor.ptr->rec.key);
                     m_data[info.record_count++] = *cursor.ptr;
 
@@ -200,14 +197,6 @@ public:
                         if (m_bf) {
                             m_bf->insert(cursor.ptr->rec);
                         }
-                    }
-
-                    if (cursor.ptr->rec.key < m_min_key) {
-                        m_min_key = cursor.ptr->rec.key;
-                    }
-
-                    if (cursor.ptr->rec.key > m_max_key) {
-                        m_max_key = cursor.ptr->rec.key;
                     }
                 }
                 pq.pop();

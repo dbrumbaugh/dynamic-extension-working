@@ -102,10 +102,11 @@ public:
            ptr->rec.key <= query->global_parms.upper_bound) {
 
       if (!ptr->is_deleted()) {
-        result.record_count++;
 
         if (ptr->is_tombstone()) {
           result.tombstone_count++;
+        } else {
+          result.record_count++;
         }
       }
 
