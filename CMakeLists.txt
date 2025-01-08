@@ -13,6 +13,7 @@ set(debug false)
 set(tests True)
 set(bench false)
 set(vldb_bench true)
+set(tail_bench true)
 
 # ALEX doesn't build under C++20
 set(build_alex false)
@@ -284,7 +285,12 @@ if (vldb_bench)
 
 endif()
 
-
+if (tail_bench)
+    add_executable(config_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/config_sweep.cpp)
+    target_link_libraries(config_sweep PUBLIC gsl pthread atomic)
+    target_include_directories(config_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(config_sweep PUBLIC -mcx16)
+endif()
 
 if (bench) 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/benchmarks")
