@@ -249,6 +249,19 @@ public:
   }
 
   /**
+   * Get the number of non-empty shards within the index.
+   *
+   * @return The number of non-empty shards within the index
+   */
+  size_t get_shard_count() {
+    auto epoch = get_active_epoch();
+    auto s = epoch->get_structure()->get_shard_count();
+    end_job(epoch);
+
+    return s;
+  }
+
+  /**
    *  Get the number of bytes of memory allocated across the framework for
    *  storing records and associated index information (i.e., internal
    *  ISAM tree nodes). This includes memory that is allocated but

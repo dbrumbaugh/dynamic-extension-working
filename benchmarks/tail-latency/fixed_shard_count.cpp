@@ -2,18 +2,20 @@
  *
  */
 
-#include "framework/scheduling/FIFOScheduler.h"
 #define ENABLE_TIMER
 #define TS_TEST
 
 #include <thread>
 
 #include "framework/DynamicExtension.h"
+#include "framework/scheduling/FIFOScheduler.h"
 #include "shard/TrieSpline.h"
 #include "query/rangecount.h"
 #include "framework/interface/Record.h"
 #include "file_util.h"
 #include "standard_benchmarks.h"
+
+#include "framework/reconstruction/FixedShardCountPolicy.h"
 
 #include <gsl/gsl_rng.h>
 
@@ -45,15 +47,12 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
-    std::vector<int> policies = {3};
-    std::vector<size_t> buffers = {8000, 16000, 32000};
-    std::vector<size_t> sfs = {8};
+    std::vector<size_t> shard_counts = {4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4096*2};
+    size_t buffer_size = 8000;
 
-    for (size_t l=0; l<policies.size(); l++) {
-    for (size_t j=0; j<buffers.size(); j++) {
-    for (size_t k=0; k<sfs.size(); k++) {
-        auto policy = get_policy<Shard, Q>(sfs[k], buffers[j], policies[l]);
-        auto extension = new Ext(policy, buffers[j]/4, buffers[j]);
+    for (size_t i=0; i<shard_counts.size(); i++) {
+        auto policy = new de::FixedShardCountPolicy<Shard,Q>(buffer_size, shard_counts[i], n);
+        auto extension = new Ext(policy, buffer_size / 4, buffer_size);
 
         /* warmup structure w/ 10% of records */
         size_t warmup = .1 * n;
@@ -67,40 +66,35 @@ int main(int argc, char **argv) {
 
         TIMER_INIT();
 
+        TIMER_START();
         for (size_t i=warmup; i<data.size(); i++) {
-            TIMER_START();
             while (!extension->insert(data[i])) {
                 usleep(1);
             }
-            TIMER_STOP();
-
-            //fprintf(stdout, "%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
         }
+        TIMER_STOP();
+
+        auto insert_tput = (size_t) ((double) (n - warmup) / (double) TIMER_RESULT() *1.0e9);
 
         extension->await_next_epoch();
         
         /* repeat the queries a bunch of times */
+        TIMER_START();
         for (size_t l=0; l<10; l++) {
         for (size_t i=0; i<queries.size(); i++) {
-            TIMER_START();
             auto q = queries[i];
             auto res = extension->query(std::move(q));
             res.get();
-            TIMER_STOP();
-
-            fprintf(stdout, "%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
         }
         }
+        TIMER_STOP();
 
+        auto query_lat = TIMER_RESULT() / 10*queries.size();
 
-        QP p = {0, 10000};
-        auto res =extension->query(std::move(p));
+        fprintf(stdout, "%ld\t%ld\t%ld\t%ld\n", shard_counts[i], extension->get_shard_count(), insert_tput, query_lat);
 
-        fprintf(stderr, "%ld\n", res.get());
-        extension->await_next_epoch();
         delete extension;
-    }}}
-
+    }
 
     fflush(stderr);
 }

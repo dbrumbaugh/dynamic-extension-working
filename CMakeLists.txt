@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -290,6 +290,11 @@ if (tail_bench)
     target_link_libraries(config_sweep PUBLIC gsl pthread atomic)
     target_include_directories(config_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(config_sweep PUBLIC -mcx16)
+
+    add_executable(fixed_shard_count ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/fixed_shard_count.cpp)
+    target_link_libraries(fixed_shard_count PUBLIC gsl pthread atomic)
+    target_include_directories(fixed_shard_count PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(fixed_shard_count PUBLIC -mcx16)
 endif()
 
 if (bench) 

@@ -166,6 +166,17 @@ public:
     return (double)tscnt / (double)(tscnt + reccnt);
   }
 
+  size_t get_nonempty_shard_count() const {
+        size_t cnt = 0;
+    for (size_t i = 0; i < m_shards.size(); i++) {
+      if (m_shards[i] && m_shards[i]->get_record_count() > 0) {
+        cnt += 1;
+      }
+    }
+
+    return cnt;
+  }
+
   std::shared_ptr<InternalLevel> clone() const {
     auto new_level = std::make_shared<InternalLevel>(m_level_no);
     for (size_t i = 0; i < m_shards.size(); i++) {
@@ -183,6 +194,14 @@ public:
 
   void append(std::shared_ptr<ShardType> shard) {
     m_shards.emplace_back(shard);
+  }
+
+  const ShardType *get_shard(ShardID shid) const {
+    if (shid < m_shards.size()) {
+      return m_shards[shid].get();
+    }
+
+    return nullptr;
   }
 
 private:

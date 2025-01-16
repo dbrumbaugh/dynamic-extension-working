@@ -22,6 +22,7 @@
 #include "framework/reconstruction/LevelingPolicy.h"
 #include "framework/reconstruction/TieringPolicy.h"
 #include "framework/reconstruction/BSMPolicy.h"
+#include "framework/reconstruction/FloodL0Policy.h"
 
 constexpr double delete_proportion = 0.05;
 static size_t g_deleted_records = 0;
@@ -38,7 +39,9 @@ de::ReconstructionPolicy<S, Q> *get_policy(size_t scale_factor, size_t buffer_si
         recon = new de::LevelingPolicy<S, Q>(scale_factor, buffer_size);
     } else if (policy == 2) {
         recon = new de::BSMPolicy<S, Q>(buffer_size);
-    } 
+    } else if (policy == 3) {
+        recon = new de::FloodL0Policy<S, Q>(buffer_size);
+    }
 
     return recon;
 }

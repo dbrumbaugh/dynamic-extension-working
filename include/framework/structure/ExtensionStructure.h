@@ -145,17 +145,32 @@ public:
     return cnt;
   }
 
-  inline void perform_reconstruction(ReconstructionTask task) {
+  size_t get_shard_count() const {
+    size_t cnt = 0;
+    for (size_t i = 0; i < m_levels.size(); i++) {
+      if (m_levels[i]) {
+        cnt += m_levels[i]->get_nonempty_shard_count();
+      }
+    }
+
+    return cnt;
+  }
+
+  inline void perform_reconstruction(ReconstructionTask task, 
+                                     BuffView *bv=nullptr) {
     /* perform the reconstruction itself */
     std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
       assert(shid.level_idx < (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
 
-      /* if unspecified, push all shards into the vector */
-      if (shid.shard_idx == all_shards_idx) {
-        for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count();
-             i++) {
+      if (shid == buffer_shid) {
+        assert(bv);
+        ShardType *buffer_shard = new ShardType(std::move(*bv));
+        shards.push_back(buffer_shard);
+      } else if (shid.shard_idx == all_shards_idx) {
+        /* if unspecified, push all shards into the vector */
+        for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count(); i++) {
           if (m_levels[shid.level_idx]->get_shard(i)) {
             shards.push_back(m_levels[shid.level_idx]->get_shard(i));
           }
@@ -171,7 +186,9 @@ public:
      * Remove all of the shards processed by the operation
      */
     for (ShardID shid : task.sources) {
-      if (shid.shard_idx == all_shards_idx) {
+      if (shid == buffer_shid) {
+        continue;
+      } else if (shid.shard_idx == all_shards_idx) {
         m_levels[shid.level_idx]->truncate();
       } else {
         m_levels[shid.level_idx]->delete_shard(shid.shard_idx);
@@ -199,29 +216,49 @@ public:
      * like that, we'll leave this as low priority.
      */
 
-    /* insert the first level, if needed */
-    if (m_levels.size() == 0) {
-      m_levels.push_back(
-          std::make_shared<InternalLevel<ShardType, QueryType>>(0));
-    }
+    // /* insert the first level, if needed */
+    // if (m_levels.size() == 0) {
+    //   m_levels.push_back(
+    //       std::make_shared<InternalLevel<ShardType, QueryType>>(0));
+    // }
 
-    ShardType *buffer_shard = new ShardType(std::move(buffer));
-    if (task.type == ReconstructionType::Append || m_levels[0]->get_shard_count() == 0) {
-      m_levels[0]->append(std::shared_ptr<ShardType>(buffer_shard));
-    } else {
-      std::vector<const ShardType *> shards;
-      for (level_index i = 0; i < (level_index)m_levels[0]->get_shard_count();
-           i++) {
-        if (m_levels[0]->get_shard(i)) {
-          shards.push_back(m_levels[0]->get_shard(i));
-        }
+    perform_reconstruction(task, &buffer);
 
-        shards.push_back(buffer_shard);
-        ShardType *new_shard = new ShardType(shards);
-        m_levels[0]->truncate();
-        m_levels[0]->append(std::shared_ptr<ShardType>(new_shard));
-      }
-    }
+    // ShardType *buffer_shard = new ShardType(std::move(buffer));
+    // if (task.type == ReconstructionType::Append || m_levels[0]->get_shard_count() == 0) {
+    //   m_levels[0]->append(std::shared_ptr<ShardType>(buffer_shard));
+    // } else if (task.type == ReconstructionType::Merge) {
+    //   std::vector<const ShardType *> shards;
+    //   for (size_t i=0; i<task.sources.size(); i++) {
+    //     ShardID shid = task.sources[i];
+    //     if (shid != buffer_shid) {
+    //       shards.emplace_back(m_levels[shid.level_idx]->get_shard(shid.shard_idx));
+    //     }
+    //   }
+
+    //   shards.emplace_back(buffer_shard);
+    //   ShardType *new_shard = new ShardType(shards);
+    //   m_levels[0]->append(std::shared_ptr<ShardType>(new_shard));
+    //   for (size_t i=0; i<task.sources.size(); i++) {
+    //     ShardID shid = task.sources[i];
+    //     if (shid != buffer_shid) {
+    //       m_levels[shid.level_idx]->delete_shard(shid.shard_idx);
+    //     }
+    //   }
+    // } else {
+    //   std::vector<const ShardType *> shards;
+    //   for (level_index i = 0; i < (level_index)m_levels[0]->get_shard_count();
+    //        i++) {
+    //     if (m_levels[0]->get_shard(i)) {
+    //       shards.push_back(m_levels[0]->get_shard(i));
+    //     }
+
+    //     shards.push_back(buffer_shard);
+    //     ShardType *new_shard = new ShardType(shards);
+    //     m_levels[0]->truncate();
+    //     m_levels[0]->append(std::shared_ptr<ShardType>(new_shard));
+    //   }
+    // }
   }
 
   bool take_reference() {

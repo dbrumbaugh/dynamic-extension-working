@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
 
     fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\n", insert_throughput, query_latency, ext_size, static_latency, static_size);
 
+    fprintf(stdout, "%ld\n", extension->get_height());
+
     gsl_rng_free(rng);
     delete extension;
     fflush(stderr);
