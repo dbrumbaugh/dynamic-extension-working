@@ -23,14 +23,19 @@
 
 namespace de {
 
+enum class ReconstructionPriority {
+  FLUSH = 0,
+  CMPCT = 1,
+  MAINT = 2  
+};
+
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 struct ReconstructionArgs {
   typedef typename ShardType::RECORD RecordType;
-  Epoch<ShardType, QueryType> *epoch;
+  std::atomic<std::shared_ptr<Version<ShardType, QueryType>>> version;
   ReconstructionVector tasks;
-  std::promise<bool> result;
-  bool compaction;
   void *extension;
+  ReconstructionPriority priority;
 };
 
 template <ShardInterface S, QueryInterface<S> Q, typename DE> struct QueryArgs {

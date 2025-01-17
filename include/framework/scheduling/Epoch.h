@@ -17,7 +17,7 @@
 namespace de {
 
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
-class Epoch {
+class Version {
 private:
   typedef typename ShardType::RECORD RecordType;
   typedef MutableBuffer<RecordType> Buffer;
@@ -25,17 +25,17 @@ private:
   typedef BufferView<RecordType> BufView;
 
 public:
-  Epoch(size_t number = 0)
+  Version(size_t number = 0)
       : m_buffer(nullptr), m_structure(nullptr), m_active_merge(false),
         m_epoch_number(number), m_buffer_head(0) {}
 
-  Epoch(size_t number, Structure *structure, Buffer *buff, size_t head)
+  Version(size_t number, Structure *structure, Buffer *buff, size_t head)
       : m_buffer(buff), m_structure(structure), m_active_merge(false),
         m_epoch_number(number), m_buffer_head(head) {
     structure->take_reference();
   }
 
-  ~Epoch() {
+  ~Version() {
     if (m_structure) {
       m_structure->release_reference();
     }
@@ -49,10 +49,10 @@ public:
    * Epochs are *not* copyable or movable. Only one can exist, and all users
    * of it work with pointers
    */
-  Epoch(const Epoch &) = delete;
-  Epoch(Epoch &&) = delete;
-  Epoch &operator=(const Epoch &) = delete;
-  Epoch &operator=(Epoch &&) = delete;
+  Version(const Version &) = delete;
+  Version(Version &&) = delete;
+  Version &operator=(const Version &) = delete;
+  Version &operator=(Version &&) = delete;
 
   size_t get_epoch_number() const { return m_epoch_number; }
 
@@ -68,9 +68,9 @@ public:
    * the same one. The epoch number of the new epoch will be set to the
    * provided argument.
    */
-  Epoch *clone(size_t number) {
+  Version *clone(size_t number) {
     std::unique_lock<std::mutex> m_buffer_lock;
-    auto epoch = new Epoch(number);
+    auto epoch = new Version(number);
     epoch->m_buffer = m_buffer;
     epoch->m_buffer_head = m_buffer_head;
 

@@ -25,10 +25,10 @@ public:
       : m_scale_factor(2), m_buffer_size(buffer_size) {}
 
   ReconstructionVector
-  get_reconstruction_tasks(const Epoch<ShardType, QueryType> *epoch,
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
                            size_t incoming_reccnt) const override {
     ReconstructionVector reconstructions;
-    auto levels = epoch->get_structure()->get_level_vector();
+    auto levels = version->get_structure()->get_level_vector();
 
     level_index target_level = find_reconstruction_target(levels);
     assert(target_level != -1);
@@ -53,10 +53,10 @@ public:
     return reconstructions;
   }
 
-  ReconstructionTask
-  get_flush_task(const Epoch<ShardType, QueryType> *epoch) const override {
-    return ReconstructionTask{
-        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Merge};
+  ReconstructionVector
+  get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
+    ReconstructionVector v;
+    v.add_reconstruction(ReconstructionTask {{buffer_shid}, 0, m_buffer_size, ReconstructionType::Merge});
   }
 
 private:

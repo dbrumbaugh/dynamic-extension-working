@@ -164,17 +164,18 @@ public:
       assert(shid.level_idx < (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
 
-      if (shid == buffer_shid) {
-        assert(bv);
-        ShardType *buffer_shard = new ShardType(std::move(*bv));
-        shards.push_back(buffer_shard);
-      } else if (shid.shard_idx == all_shards_idx) {
-        /* if unspecified, push all shards into the vector */
-        for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count(); i++) {
+      /* if unspecified, push all shards into the vector */
+      if (shid.shard_idx == all_shards_idx) {
+        for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count();
+             i++) {
           if (m_levels[shid.level_idx]->get_shard(i)) {
             shards.push_back(m_levels[shid.level_idx]->get_shard(i));
           }
         }
+      } else if (shid == buffer_shid) {
+        assert(bv);
+        ShardType *buffer_shard = new ShardType(std::move(buffer));
+        shards.push_back(buffer_shard);
       } else {
         shards.push_back(m_levels[shid.level_idx]->get_shard(shid.shard_idx));
       }
@@ -186,11 +187,9 @@ public:
      * Remove all of the shards processed by the operation
      */
     for (ShardID shid : task.sources) {
-      if (shid == buffer_shid) {
-        continue;
-      } else if (shid.shard_idx == all_shards_idx) {
+      if (shid.shard_idx == all_shards_idx) {
         m_levels[shid.level_idx]->truncate();
-      } else {
+      } else if (shid != buffer_shid) {
         m_levels[shid.level_idx]->delete_shard(shid.shard_idx);
       }
     }

@@ -25,31 +25,36 @@ public:
   : m_buffer_size(buffer_size), m_shard_count(shard_count), m_max_reccnt(max_record_count) {}
 
   ReconstructionVector
-  get_reconstruction_tasks(const Epoch<ShardType, QueryType> *epoch,
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
                            size_t incoming_reccnt) const override {
     ReconstructionVector reconstructions;
     return reconstructions;
 
   }
 
-  ReconstructionTask
-  get_flush_task(const Epoch<ShardType, QueryType> *epoch) const override {
+  ReconstructionVector
+  get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
 
-    auto levels = epoch->get_structure()->get_level_vector();
+    auto levels = version->get_structure()->get_level_vector();
+
+    ReconstructionVector v;
 
     if (levels.size() == 0) {
-      return ReconstructionTask{
-          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append};
+      v.add_reconstruction(ReconstructionTask{
+          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append});
+      return v;
     }
 
     ShardID last_shid = {0, (shard_index) (levels[0]->get_shard_count() - 1)};
 
     if (levels[0]->get_shard(last_shid.shard_idx)->get_record_count() + m_buffer_size <= capacity()) {
-        return ReconstructionTask{
-          {{buffer_shid, last_shid}}, 0, m_buffer_size, ReconstructionType::Merge};
+        v.add_reconstruction(ReconstructionTask{
+          {{buffer_shid, last_shid}}, 0, m_buffer_size, ReconstructionType::Merge});
+        return v;
     } else {
-        return ReconstructionTask{
-          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append};
+        v.add_reconstruction(ReconstructionTask{
+          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append});
+        return v;
     }
   }
 
