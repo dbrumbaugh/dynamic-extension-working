@@ -14,7 +14,7 @@
 
 #include "util/types.h"
 #include "framework/structure/ExtensionStructure.h"
-#include "framework/scheduling/Epoch.h"
+#include "framework/scheduling/Version.h"
 
 namespace de {
 template<ShardInterface ShardType, QueryInterface<ShardType> QueryType>

@@ -17,7 +17,7 @@
 #include <functional>
 #include <future>
 
-#include "framework/scheduling/Epoch.h"
+#include "framework/scheduling/Version.h"
 #include "framework/scheduling/statistics.h"
 #include "util/types.h"
 
