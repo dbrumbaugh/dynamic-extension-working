@@ -295,6 +295,11 @@ if (tail_bench)
     target_link_libraries(fixed_shard_count PUBLIC gsl pthread atomic)
     target_include_directories(fixed_shard_count PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(fixed_shard_count PUBLIC -mcx16)
+
+    add_executable(btree_insert_dist ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/btree_insert_dist.cpp)
+    target_link_libraries(btree_insert_dist PUBLIC gsl pthread atomic)
+    target_include_directories(btree_insert_dist PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(btree_insert_dist PUBLIC -mcx16)
 endif()
 
 if (bench) 
