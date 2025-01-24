@@ -413,8 +413,27 @@ private:
 
   static void reconstruction(void *arguments) {
     auto args = (ReconstructionArgs<ShardType, QueryType> *)arguments;
+    auto extension = (DynamicExtension *) args->extension;
+    extension->SetThreadAffinity();
 
-    ((DynamicExtension *)args->extension)->SetThreadAffinity();
+    if (args->priority == ReconstructionPriority::FLUSH) {
+      /* we first construct a shard from the buffer */
+      auto buffview = args->version->get_buffer();
+      auto new_head = buffview.get_tail();
+      auto new_shard = Shard(std::move(buffview));
+
+      /* copy the currently active version's structure */
+      auto structure = extension->get_active_version()->get_structure()->clone();
+      
+      
+    }
+
+
+    else {
+      
+    }
+
+    
     Structure *vers = args->version->get_mutable_structure();
 
     ReconstructionTask flush_task;

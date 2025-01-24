@@ -56,9 +56,9 @@ public:
 
   size_t get_epoch_number() const { return m_epoch_number; }
 
-  const Structure *get_structure() const { return m_structure; }
+  const Structure *get_structure() const { return m_structure.get(); }
 
-  Structure *get_mutable_structure() { return m_structure; }
+  Structure *get_mutable_structure() { return m_structure.get(); }
 
   BufView get_buffer() const { return m_buffer->get_buffer_view(m_buffer_head); }
 
@@ -113,7 +113,7 @@ public:
 
 private:
   Buffer *m_buffer;
-  Structure *m_structure;
+  std::unique_ptr<Structure> m_structure;
 
   std::mutex m_buffer_lock;
   std::atomic<bool> m_active_merge;
