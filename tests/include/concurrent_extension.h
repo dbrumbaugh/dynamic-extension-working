@@ -26,24 +26,41 @@
 #include "framework/reconstruction/TieringPolicy.h"
 #include "testing.h"
 #include "framework/DynamicExtension.h"
-#include "framework/scheduling/FIFOScheduler.h"
+#include "framework/scheduling/SerialScheduler.h"
+#include "framework/reconstruction/LevelingPolicy.h"
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
 #include <check.h>
+#include <memory>
 #include <set>
 #include <random>
 
-// using namespace de;
-// typedef Rec R;
-// typedef ISAMTree<R> S;
-// typedef rq::Query<S> Q;
-// typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, FIFOScheduler> DE;
-// ReconstructionPolicy<S,Q> *recon = new TieringPolicy<S, Q>(2, 1000);
-// ReconstructionPolicy<S,Q> *recon2 = new TieringPolicy<S, Q>(4, 10000);
+
+
+using namespace de;
+typedef Rec R;
+typedef ISAMTree<R> S;
+typedef rq::Query<S> Q;
+typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
+typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> CONF;
+
+static CONF create_config(size_t type=1) {
+    if (type == 1) {
+        auto recon = std::make_unique<LevelingPolicy<S, Q>>(2, 1000);
+
+        return CONF(std::move(recon));
+    } else {
+        auto recon2 = std::make_unique<LevelingPolicy<S, Q>>(4, 10000);
+        CONF configuration2 = CONF(std::move(recon2));
+        return CONF(std::move(recon2));
+    }
+}
+
+
 
 START_TEST(t_create)
 {
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     ck_assert_ptr_nonnull(test_de);
     ck_assert_int_eq(test_de->get_record_count(), 0);
@@ -56,7 +73,7 @@ END_TEST
 
 START_TEST(t_insert)
 {
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -77,7 +94,7 @@ END_TEST
 
 START_TEST(t_debug_insert)
 {
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -96,7 +113,7 @@ END_TEST
 
 START_TEST(t_insert_with_mem_merges)
 {
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     uint64_t key = 0;
     uint32_t val = 0;
@@ -109,7 +126,7 @@ START_TEST(t_insert_with_mem_merges)
 
     ck_assert_int_eq(test_de->get_record_count(), 1000);
 
-    test_de->await_next_epoch();
+    test_de->await_version();
 
     ck_assert_int_eq(test_de->get_record_count(), 1000);
 
@@ -128,7 +145,7 @@ START_TEST(t_insert_with_mem_merges)
         }
     } while (cnt < 100000);
 
-    test_de->await_next_epoch();
+    test_de->await_version();
 
     ck_assert_int_eq(test_de->get_record_count(), 101000);
 
@@ -139,7 +156,7 @@ END_TEST
 
 START_TEST(t_range_query)
 {
-    auto test_de = new DE(recon2, 1000, 10000);
+    auto test_de = new DE(create_config(2));
     size_t n = 10000000;
 
     std::vector<uint64_t> keys;
@@ -162,7 +179,7 @@ START_TEST(t_range_query)
     }
 
 
-    test_de->await_next_epoch();
+    test_de->await_version();
 
     std::sort(keys.begin(), keys.end());
 
@@ -193,7 +210,7 @@ END_TEST
 START_TEST(t_tombstone_merging_01)
 {
     size_t reccnt = 100000;
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     auto rng = gsl_rng_alloc(gsl_rng_mt19937);
 
@@ -237,7 +254,7 @@ START_TEST(t_tombstone_merging_01)
         }
     }
 
-    test_de->await_next_epoch();
+    test_de->await_version();
 
     ck_assert(test_de->validate_tombstone_proportion());
 
@@ -251,7 +268,7 @@ START_TEST(t_static_structure)
     auto rng = gsl_rng_alloc(gsl_rng_mt19937);
 
     size_t reccnt = 100000;
-    auto test_de = new DE(recon, 100, 1000);
+    auto test_de = new DE(create_config());
 
     std::set<R> records; 
     std::set<R> to_delete;

@@ -18,10 +18,10 @@ namespace de {
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType,
 DeletePolicy D, SchedulerInterface SchedType>
 class DEConfiguration {
+  public:
   DEConfiguration(std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> recon_policy) 
-   : m_recon_policy(recon_policy) {}
+   : m_recon_policy(std::move(recon_policy)) {}
 
-   public:
     std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> m_recon_policy;
 
     /* buffer parameters */

@@ -32,7 +32,7 @@ enum class ReconstructionPriority {
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 struct ReconstructionArgs {
   typedef typename ShardType::RECORD RecordType;
-  std::atomic<std::shared_ptr<Version<ShardType, QueryType>>> version;
+  std::shared_ptr<Version<ShardType, QueryType>> version;
   ReconstructionVector tasks;
   void *extension;
   ReconstructionPriority priority;

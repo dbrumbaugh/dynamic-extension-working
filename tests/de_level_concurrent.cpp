@@ -13,11 +13,13 @@
 #include <random>
 #include <algorithm>
 
+#include "framework/scheduling/SerialScheduler.h"
 #include "include/testing.h"
 #include "framework/DynamicExtension.h"
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
 #include "framework/reconstruction/LevelingPolicy.h"
+#include "framework/util/Configuration.h"
 
 #include <check.h>
 using namespace de;
@@ -27,11 +29,9 @@ typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
 
 typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
-ReconstructionPolicy<S, Q> *recon = new LevelingPolicy<S, Q>(2, 1000);
-ReconstructionPolicy<S, Q> *recon2 = new LevelingPolicy<S, Q>(4, 10000);
+typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> CONF;
 
 #include "include/concurrent_extension.h"
-
 
 Suite *unit_testing()
 {

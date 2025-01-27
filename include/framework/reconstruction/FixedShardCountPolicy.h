@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "framework/reconstruction/ReconstructionPolicy.h"
-#include "framework/scheduling/Epoch.h"
+#include "framework/scheduling/Version.h"
 #include "util/types.h"
 
 namespace de {

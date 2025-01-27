@@ -23,8 +23,7 @@ class ReconstructionPolicy {
 
 public:
   ReconstructionPolicy() {}
-  virtual ReconstructionVector get_reconstruction_tasks(const Version<ShardType, QueryType> *version, 
-                                                        size_t incoming_reccnt) const = 0;
+  virtual ReconstructionVector get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const = 0;
   virtual ReconstructionVector get_flush_tasks(const Version<ShardType, QueryType> *version) const = 0;
   };
 }

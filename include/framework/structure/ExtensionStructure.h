@@ -51,7 +51,6 @@ public:
       new_struct->m_levels.push_back(m_levels[i]->clone());
     }
 
-    new_struct->m_refcnt = 0;
     return new_struct;
   }
 
@@ -156,8 +155,7 @@ public:
     return cnt;
   }
 
-  inline void perform_reconstruction(ReconstructionTask task, 
-                                     BuffView *bv=nullptr) {
+  inline void perform_reconstruction(ReconstructionTask task) { 
     /* perform the reconstruction itself */
     std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
@@ -172,10 +170,6 @@ public:
             shards.push_back(m_levels[shid.level_idx]->get_shard(i));
           }
         }
-      } else if (shid == buffer_shid) {
-        assert(bv);
-        ShardType *buffer_shard = new ShardType(std::move(bv));
-        shards.push_back(buffer_shard);
       } else {
         shards.push_back(m_levels[shid.level_idx]->get_shard(shid.shard_idx));
       }

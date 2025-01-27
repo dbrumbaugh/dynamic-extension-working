@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "framework/reconstruction/ReconstructionPolicy.h"
-#include "framework/scheduling/Epoch.h"
+#include "framework/scheduling/Version.h"
 #include "util/types.h"
 
 namespace de {
@@ -26,17 +26,14 @@ public:
   ReconstructionVector
   get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
                            size_t incoming_reccnt) const override {
-
     ReconstructionVector reconstructions;
     return reconstructions;
-
   }
 
   ReconstructionVector
   get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
-    ReconstructionVector v;
-    v.add_reconstruction(ReconstructionTask{
-        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append});
+    ReconstructionVector reconstructions;
+    return reconstructions;
   }
 
 private:

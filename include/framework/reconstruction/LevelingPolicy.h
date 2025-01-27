@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "framework/reconstruction/ReconstructionPolicy.h"
-#include "framework/scheduling/Epoch.h"
+#include "framework/scheduling/Version.h"
 #include "util/types.h"
 
 namespace de {
@@ -25,14 +25,19 @@ public:
       : m_scale_factor(scale_factor), m_buffer_size(buffer_size) {}
 
   ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
-                           size_t incoming_reccnt) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override { 
+    ReconstructionVector reconstructions;
+    return reconstructions;
+  }
+
+  ReconstructionVector
+  get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
     ReconstructionVector reconstructions;
     auto levels = version->get_structure()->get_level_vector();
 
     level_index target_level = find_reconstruction_target(levels);
     assert(target_level != -1);
-    level_index source_level = 0;
+    level_index source_level = 1;
 
     if (target_level == invalid_level_idx) {
       /* grow */
@@ -49,14 +54,6 @@ public:
     }
 
     return reconstructions;
-  }
-
-  ReconstructionVector
-  get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
-    ReconstructionVector v;
-    v.add_reconstruction(ReconstructionTask{
-        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Merge});
-    return v;
   }
 
 private:
