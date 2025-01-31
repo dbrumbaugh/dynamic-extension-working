@@ -84,13 +84,10 @@ public:
     return version;
   }
 
-  void set_next_buffer_head(size_t new_head) {
-    m_pending_buffer_head = new_head;
-  }
-
   bool advance_buffer_head() {
-    m_buffer_head = m_pending_buffer_head;
-    return m_buffer->advance_head(m_buffer_head);
+    auto new_head = m_buffer->get_buffer_view().get_tail();
+    m_buffer_head = new_head;
+    return m_buffer->advance_head(new_head);
   }
 
 private:

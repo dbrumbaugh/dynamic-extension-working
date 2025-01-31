@@ -20,9 +20,9 @@ DeletePolicy D, SchedulerInterface SchedType>
 class DEConfiguration {
   public:
   DEConfiguration(std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> recon_policy) 
-   : m_recon_policy(std::move(recon_policy)) {}
+   : recon_policy(std::move(recon_policy)) {}
 
-    std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> m_recon_policy;
+    std::unique_ptr<ReconstructionPolicy<ShardType, QueryType>> recon_policy;
 
     /* buffer parameters */
     size_t buffer_count = 1;
@@ -31,8 +31,9 @@ class DEConfiguration {
 
     /* reconstruction triggers */
     bool recon_enable_seek_trigger = false;
-    bool recon_enable_maint_on_flush = true;
+    bool recon_enable_maint_on_flush = false;
     bool recon_enable_delete_cmpct = false;
+    bool recon_maint_disabled = true;
 
     size_t recon_l0_capacity = 0; /* 0 for unbounded */
     double maximum_delete_proportion = 1;

@@ -20,14 +20,15 @@
 #include "framework/reconstruction/LevelingPolicy.h"
 
 #include <check.h>
-using namespace de;
 
+
+using namespace de;
 typedef Rec R;
 typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
-
+typedef LevelingPolicy<S, Q> Policy;
 typedef DynamicExtension<S, Q, DeletePolicy::TAGGING, SerialScheduler> DE;
-ReconstructionPolicy<S, Q> *recon = new LevelingPolicy<S, Q>(2, 1000);
+typedef de::DEConfiguration<S, Q, DeletePolicy::TAGGING, SerialScheduler> CONF;
 
 #include "include/dynamic_extension.h"
 

@@ -27,7 +27,10 @@ class ExtensionStructure {
   typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>>
       LevelVector;
 public:
-  ExtensionStructure() = default;
+  ExtensionStructure() {
+    m_levels.emplace_back(std::make_shared<InternalLevel<ShardType, QueryType>>(0));
+  }
+  
   ~ExtensionStructure() = default;
 
   /*
@@ -217,7 +220,6 @@ public:
   }
 
   void append_l0(std::shared_ptr<ShardType> shard) {
-    // FIXME: ensure that there's always a level 0 in the version
     m_levels[0]->append(shard);
   }
 

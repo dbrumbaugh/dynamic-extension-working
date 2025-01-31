@@ -37,21 +37,19 @@
 
 
 
-using namespace de;
-typedef Rec R;
-typedef ISAMTree<R> S;
-typedef rq::Query<S> Q;
-typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
-typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> CONF;
+// using namespace de;
+// typedef Rec R;
+// typedef ISAMTree<R> S;
+// typedef rq::Query<S> Q;
+// typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
+// typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> CONF;
 
 static CONF create_config(size_t type=1) {
     if (type == 1) {
         auto recon = std::make_unique<LevelingPolicy<S, Q>>(2, 1000);
-
         return CONF(std::move(recon));
     } else {
         auto recon2 = std::make_unique<LevelingPolicy<S, Q>>(4, 10000);
-        CONF configuration2 = CONF(std::move(recon2));
         return CONF(std::move(recon2));
     }
 }

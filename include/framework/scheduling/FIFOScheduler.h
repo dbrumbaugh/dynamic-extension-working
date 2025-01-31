@@ -82,6 +82,7 @@ private:
   std::atomic<size_t> m_counter;
   std::mutex m_cv_lock;
   std::condition_variable m_cv;
+  std::mutex m_queue_lock;
 
   std::thread m_sched_thrd;
   std::thread m_sched_wakeup_thrd;
@@ -102,6 +103,7 @@ private:
   }
 
   void schedule_next() {
+    auto lk = std::unique_lock<std::mutex>(m_queue_lock);
     assert(m_task_queue.size() > 0);
     auto t = m_task_queue.pop();
     m_stats.job_scheduled(t.m_timestamp);

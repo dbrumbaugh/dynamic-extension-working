@@ -16,6 +16,7 @@
 #include "framework/scheduling/SerialScheduler.h"
 #include "include/testing.h"
 #include "framework/DynamicExtension.h"
+#include "framework/scheduling/FIFOScheduler.h"
 #include "shard/ISAMTree.h"
 #include "query/rangequery.h"
 #include "framework/reconstruction/LevelingPolicy.h"
@@ -28,8 +29,8 @@ typedef Rec R;
 typedef ISAMTree<R> S;
 typedef rq::Query<S> Q;
 
-typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> DE;
-typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, SerialScheduler> CONF;
+typedef DynamicExtension<S, Q, DeletePolicy::TOMBSTONE, FIFOScheduler> DE;
+typedef de::DEConfiguration<S, Q, DeletePolicy::TOMBSTONE, FIFOScheduler> CONF;
 
 #include "include/concurrent_extension.h"
 
