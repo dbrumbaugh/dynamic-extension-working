@@ -300,11 +300,21 @@ if (tail_bench)
     target_link_libraries(fixed_shard_latency_dist PUBLIC gsl pthread atomic)
     target_include_directories(fixed_shard_latency_dist PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(fixed_shard_latency_dist PUBLIC -mcx16)
+    
+    add_executable(standard_latency_dist ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/standard_latency_dist.cpp)
+    target_link_libraries(standard_latency_dist PUBLIC gsl pthread atomic)
+    target_include_directories(standard_latency_dist PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(standard_latency_dist PUBLIC -mcx16)
 
     add_executable(btree_insert_dist ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/btree_insert_dist.cpp)
     target_link_libraries(btree_insert_dist PUBLIC gsl pthread atomic)
     target_include_directories(btree_insert_dist PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(btree_insert_dist PUBLIC -mcx16)
+
+    add_executable(isam_buffer ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/isam_buffer.cpp)
+    target_link_libraries(isam_buffer PUBLIC gsl pthread atomic)
+    target_include_directories(isam_buffer PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(isam_buffer PUBLIC -mcx16)
 endif()
 
 if (bench) 
