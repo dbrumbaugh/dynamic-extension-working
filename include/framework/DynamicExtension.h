@@ -445,6 +445,7 @@ private:
       /* we first construct a shard from the buffer */
       auto buffview = args->version->get_buffer();
       assert(buffview.get_tail() != buffview.get_head());
+      size_t new_head = buffview.get_tail();
 
       auto new_shard = std::make_shared<ShardType>(std::move(buffview));
 
@@ -471,7 +472,7 @@ private:
         args->version->set_structure(std::move(structure));
       }
 
-      args->version->advance_buffer_head();
+      args->version->advance_buffer_head(new_head);
     }
 
     /* perform all of the reconstructions */

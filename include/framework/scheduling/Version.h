@@ -84,8 +84,7 @@ public:
     return version;
   }
 
-  bool advance_buffer_head() {
-    auto new_head = m_buffer->get_buffer_view().get_tail();
+  bool advance_buffer_head(size_t new_head) {
     m_buffer_head = new_head;
     return m_buffer->advance_head(new_head);
   }

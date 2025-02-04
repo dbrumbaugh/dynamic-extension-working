@@ -137,6 +137,11 @@ START_TEST(t_insert_with_mem_merges)
         if (test_de->insert(r)) {
             r = R{r.key + 1, r.value + 1};
             cnt++;
+
+            if (test_de->get_record_count() != cnt + 1000) {
+                fprintf(stderr, "here!\n");
+
+            }
             ck_assert_int_eq(test_de->get_record_count(), cnt + 1000);
         } else {
             _mm_pause();
