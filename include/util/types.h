@@ -111,7 +111,11 @@ public:
 
   void add_reconstruction(level_index source, level_index target,
                           size_t reccnt, ReconstructionType type) {
-    m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt});
+    if (type == ReconstructionType::Merge) {
+        m_tasks.push_back({{{source, all_shards_idx}, {target, all_shards_idx}}, target, reccnt});
+    } else {
+        m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt});
+    }
     total_reccnt += reccnt;
   }
 

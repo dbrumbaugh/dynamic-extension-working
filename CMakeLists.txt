@@ -315,6 +315,12 @@ if (tail_bench)
     target_link_libraries(isam_buffer PUBLIC gsl pthread atomic)
     target_include_directories(isam_buffer PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(isam_buffer PUBLIC -mcx16)
+
+    
+    add_executable(vptree_buffer ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/vptree_buffer.cpp)
+    target_link_libraries(vptree_buffer PUBLIC gsl pthread atomic)
+    target_include_directories(vptree_buffer PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(vptree_buffer PUBLIC -mcx16)
 endif()
 
 if (bench) 

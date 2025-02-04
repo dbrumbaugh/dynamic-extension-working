@@ -296,6 +296,14 @@ public:
     return t;
   }
 
+
+  
+  void print_structure() {
+    auto epoch = get_active_epoch();
+    epoch->get_structure()->print_structure();
+    end_job(epoch);
+  }
+
   /**
    *  Create a new single Shard object containing all of the records
    *  within the framework (buffer and shards).
@@ -706,6 +714,7 @@ private:
     /* this will fail if the HWM is reached and return 0 */
     return m_buffer->append(rec, ts);
   }
+
 
 //#ifdef _GNU_SOURCE
 #if 0

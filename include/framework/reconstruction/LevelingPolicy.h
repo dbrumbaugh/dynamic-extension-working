@@ -54,7 +54,7 @@ public:
   ReconstructionTask
   get_flush_task(const Epoch<ShardType, QueryType> *epoch) const override {
     return ReconstructionTask{
-        {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Merge};
+        {{buffer_shid}, {0, all_shards_idx}}, 0, m_buffer_size, ReconstructionType::Merge};
   }
 
 private:

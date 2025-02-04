@@ -161,13 +161,15 @@ public:
     /* perform the reconstruction itself */
     std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
-      assert(shid.level_idx < (level_index) m_levels.size());
+      assert(shid.level_idx <= (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
 
       if (shid == buffer_shid) {
         assert(bv);
         ShardType *buffer_shard = new ShardType(std::move(*bv));
         shards.push_back(buffer_shard);
+      } else if (shid.level_idx == (level_index) m_levels.size()) {
+        continue;
       } else if (shid.shard_idx == all_shards_idx) {
         /* if unspecified, push all shards into the vector */
         for (size_t i = 0; i < m_levels[shid.level_idx]->get_shard_count(); i++) {
@@ -187,6 +189,8 @@ public:
      */
     for (ShardID shid : task.sources) {
       if (shid == buffer_shid) {
+        continue;
+      } else if (shid.level_idx == (level_index) m_levels.size()) {
         continue;
       } else if (shid.shard_idx == all_shards_idx) {
         m_levels[shid.level_idx]->truncate();
@@ -313,6 +317,22 @@ public:
     bool validate_tombstone_proportion(level_index level, double max_delete_prop) const {
         long double ts_prop =  (long double) m_levels[level]->get_tombstone_count() / (long double) m_levels[level]->get_record_count();
         return ts_prop <= (long double) max_delete_prop;
+    }
+
+    void print_structure() const {
+      for (size_t i=0; i<m_levels.size(); i++) {
+        fprintf(stdout, "[%ld]:\t", i);
+
+        if (m_levels[i]) {
+          for (size_t j=0; j<m_levels[i]->get_shard_count(); j++) {
+            fprintf(stdout, "(%ld: %ld) ", j, m_levels[i]->get_shard(j)->get_record_count()); 
+          }
+        } else {
+          fprintf(stdout, "[Empty]");
+        }
+
+        fprintf(stdout, "\n");
+      }
     }
 
 private:

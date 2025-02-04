@@ -46,12 +46,13 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
-    std::vector<size_t> sfs = {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
+    std::vector<size_t> sfs = {2, 4, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
     size_t buffer_size = 8000;
     std::vector<size_t> policies = {0, 1};
 
+    for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
-        auto policy = get_policy<Shard, Q>(sfs[i], buffer_size, 0);
+        auto policy = get_policy<Shard, Q>(sfs[i], buffer_size, pol);
         auto extension = new Ext(policy, buffer_size / 4, buffer_size);
 
         /* warmup structure w/ 10% of records */
@@ -66,33 +67,35 @@ int main(int argc, char **argv) {
 
         TIMER_INIT();
 
+        TIMER_START();
         for (size_t j=warmup; j<data.size(); j++) {
-            TIMER_START();
             while (!extension->insert(data[j])) {
                 usleep(1);
             }
-            TIMER_STOP();
-
-            fprintf(stdout, "I\t%ld\t%ld\n", sfs[i], TIMER_RESULT());
         }
+        TIMER_STOP();
+
+        size_t insert_tput = (double) (n - warmup) / (double) (TIMER_RESULT()) * 1e9;
 
         extension->await_next_epoch();
         
         size_t total = 0;
+        TIMER_START();
         /* repeat the queries a bunch of times */
         for (size_t l=0; l<10; l++) {
             for (size_t j=0; j<queries.size(); j++) {
-                TIMER_START();
                 auto q = queries[j];
                 auto res = extension->query(std::move(q));
                 total += res.get();
-                TIMER_STOP();
-                fprintf(stdout, "Q\t%ld\t%ld\n", sfs[i], TIMER_RESULT());
             }
         }
+        TIMER_STOP();
 
-        fprintf(stdout, "S\t%ld\t%ld\t%ld\n", sfs[i], extension->get_shard_count(), total);
+        size_t query_lat = (double) TIMER_RESULT() / (10*queries.size());
+
+        fprintf(stdout, "S\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", pol, sfs[i], extension->get_height(), extension->get_shard_count(), total, insert_tput, query_lat);
         delete extension;
+    }
     }
 
     fflush(stderr);
