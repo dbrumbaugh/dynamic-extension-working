@@ -14,6 +14,8 @@
 
 #include "framework/DynamicExtension.h"
 #include "framework/interface/Query.h"
+#include "framework/reconstruction/FixedShardCountPolicy.h"
+#include "framework/reconstruction/ReconstructionPolicy.h"
 #include "query/irs.h"
 #include "psu-util/progress.h"
 #include "benchmark_types.h"
@@ -23,13 +25,14 @@
 #include "framework/reconstruction/TieringPolicy.h"
 #include "framework/reconstruction/BSMPolicy.h"
 #include "framework/reconstruction/FloodL0Policy.h"
+#include "framework/reconstruction/BackgroundTieringPolicy.h"
 
 constexpr double delete_proportion = 0.05;
 static size_t g_deleted_records = 0;
 static size_t total = 0;
 
 template<de::ShardInterface S, de::QueryInterface<S> Q>
-de::ReconstructionPolicy<S, Q> *get_policy(size_t scale_factor, size_t buffer_size, int policy=0) {
+std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, size_t buffer_size, int policy=0, size_t reccnt=0) {
 
     de::ReconstructionPolicy<S, Q> *recon = nullptr;
     
@@ -41,9 +44,14 @@ de::ReconstructionPolicy<S, Q> *get_policy(size_t scale_factor, size_t buffer_si
         recon = new de::BSMPolicy<S, Q>(buffer_size);
     } else if (policy == 3) {
         recon = new de::FloodL0Policy<S, Q>(buffer_size);
+    } else if (policy == 4) {
+        assert(reccnt > 0);
+        recon = new de::FixedShardCountPolicy<S, Q>(buffer_size, scale_factor, reccnt);
+    } else if (policy == 5) {
+        recon = new de::BackgroundTieringPolicy<S, Q>(scale_factor, buffer_size);
     }
 
-    return recon;
+    return std::unique_ptr<de::ReconstructionPolicy<S, Q>>(recon);
 }
 
 template<typename DE, typename Q, bool BSM=false>

@@ -24,8 +24,7 @@ public:
   FloodL0Policy(size_t buffer_size) : m_buffer_size(buffer_size) {}
 
   ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
-                           size_t incoming_reccnt) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override {
     ReconstructionVector reconstructions;
     return reconstructions;
   }

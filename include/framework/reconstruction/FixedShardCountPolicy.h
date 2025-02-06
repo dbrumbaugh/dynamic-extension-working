@@ -25,8 +25,7 @@ public:
   : m_buffer_size(buffer_size), m_shard_count(shard_count), m_max_reccnt(max_record_count) {}
 
   ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
-                           size_t incoming_reccnt) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override {
     ReconstructionVector reconstructions;
     return reconstructions;
 
@@ -36,26 +35,25 @@ public:
   get_flush_tasks(const Version<ShardType, QueryType> *version) const override {
 
     auto levels = version->get_structure()->get_level_vector();
-
     ReconstructionVector v;
 
-    if (levels.size() == 0) {
-      v.add_reconstruction(ReconstructionTask{
-          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append});
-      return v;
+    /* if this is the very first flush, there won't be an L1 yet */
+    if (levels.size() > 1 && levels[1]->get_shard_count() > 0) {
+      ShardID last_shid = {1, (shard_index) (levels[1]->get_shard_count() - 1)};
+      if (levels[1]->get_shard(last_shid.shard_idx)->get_record_count() + m_buffer_size <= capacity()) {
+        auto task = ReconstructionTask {
+          {{0, 0}, last_shid}, 1, m_buffer_size,ReconstructionType::Merge
+        };
+        v.add_reconstruction(task);
+        return v;
+      }
     }
 
-    ShardID last_shid = {0, (shard_index) (levels[0]->get_shard_count() - 1)};
-
-    if (levels[0]->get_shard(last_shid.shard_idx)->get_record_count() + m_buffer_size <= capacity()) {
-        v.add_reconstruction(ReconstructionTask{
-          {{buffer_shid, last_shid}}, 0, m_buffer_size, ReconstructionType::Merge});
-        return v;
-    } else {
-        v.add_reconstruction(ReconstructionTask{
-          {{buffer_shid}}, 0, m_buffer_size, ReconstructionType::Append});
-        return v;
-    }
+    auto task = ReconstructionTask {
+      {{0, 0}}, 1, m_buffer_size, ReconstructionType::Append
+    };
+    v.add_reconstruction(task);
+    return v;
   }
 
 private:

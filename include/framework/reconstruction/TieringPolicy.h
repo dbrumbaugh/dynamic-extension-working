@@ -17,14 +17,15 @@
 namespace de {
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 class TieringPolicy : public ReconstructionPolicy<ShardType, QueryType> {
-  typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>> LevelVector;
+  typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>>
+      LevelVector;
+
 public:
   TieringPolicy(size_t scale_factor, size_t buffer_size)
       : m_scale_factor(scale_factor), m_buffer_size(buffer_size) {}
 
-  ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
-                           size_t incoming_reccnt) const override {
+  ReconstructionVector get_reconstruction_tasks(
+      const Version<ShardType, QueryType> *version) const override {
     ReconstructionVector reconstructions;
     return reconstructions;
   }
@@ -59,7 +60,7 @@ private:
   level_index find_reconstruction_target(LevelVector &levels) const {
     level_index target_level = invalid_level_idx;
 
-    for (level_index i = 0; i < (level_index) levels.size(); i++) {
+    for (level_index i = 0; i < (level_index)levels.size(); i++) {
       if (levels[i]->get_shard_count() + 1 <= capacity()) {
         target_level = i;
         break;
@@ -69,9 +70,7 @@ private:
     return target_level;
   }
 
-  inline size_t capacity() const {
-    return m_scale_factor;
-  }
+  inline size_t capacity() const { return m_scale_factor; }
 
   size_t m_scale_factor;
   size_t m_buffer_size;

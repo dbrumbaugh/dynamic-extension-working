@@ -36,6 +36,7 @@ struct ReconstructionArgs {
   ReconstructionVector tasks;
   void *extension;
   ReconstructionPriority priority;
+  size_t initial_version;
 };
 
 template <ShardInterface S, QueryInterface<S> Q, typename DE> struct QueryArgs {

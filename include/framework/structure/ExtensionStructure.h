@@ -27,8 +27,9 @@ class ExtensionStructure {
   typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>>
       LevelVector;
 public:
-  ExtensionStructure() {
-    m_levels.emplace_back(std::make_shared<InternalLevel<ShardType, QueryType>>(0));
+  ExtensionStructure(bool default_level=true) {
+    if (default_level)
+      m_levels.emplace_back(std::make_shared<InternalLevel<ShardType, QueryType>>(0));
   }
   
   ~ExtensionStructure() = default;
@@ -49,7 +50,7 @@ public:
    * need to be forwarded to the appropriate structures manually.
    */
   ExtensionStructure<ShardType, QueryType> *copy() const {
-    auto new_struct = new ExtensionStructure<ShardType, QueryType>();
+    auto new_struct = new ExtensionStructure<ShardType, QueryType>(false);
     for (size_t i = 0; i < m_levels.size(); i++) {
       new_struct->m_levels.push_back(m_levels[i]->clone());
     }
@@ -158,12 +159,16 @@ public:
     return cnt;
   }
 
-  inline void perform_reconstruction(ReconstructionTask task) { 
+  inline void perform_reconstruction(ReconstructionTask task, size_t version=0) { 
     /* perform the reconstruction itself */
     std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
-      assert(shid.level_idx < (level_index) m_levels.size());
+      assert(shid.level_idx <= (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
+
+      if (shid.level_idx == (level_index) m_levels.size()) {
+        continue;
+      }
 
       /* if unspecified, push all shards into the vector */
       if (shid.shard_idx == all_shards_idx) {
@@ -184,21 +189,27 @@ public:
      * Remove all of the shards processed by the operation
      */
     for (ShardID shid : task.sources) {
-      if (shid.shard_idx == all_shards_idx) {
+      if (shid.level_idx == (level_index) m_levels.size()) {
+        continue;
+      } else if (shid.shard_idx == all_shards_idx) {
         m_levels[shid.level_idx]->truncate();
       } else if (shid != buffer_shid) {
         m_levels[shid.level_idx]->delete_shard(shid.shard_idx);
       }
     }
 
+    // fprintf(stderr, "Target: %ld\tLevels:%ld\n", task.target, m_levels.size());
+
     /*
      * Append the new shard to the target level
      */
     if (task.target < (level_index)m_levels.size()) {
-      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard));
+      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard), version);
+      // fprintf(stderr, "append (no growth)\n");
     } else { /* grow the structure if needed */
       m_levels.push_back(std::make_shared<InternalLevel<ShardType, QueryType>>(task.target));
-      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard));
+      m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard), version);
+      // fprintf(stderr, "grow and append\n");
     }
   }
 
@@ -219,8 +230,8 @@ public:
     return m_levels[0]->get_shard_count();
   }
 
-  void append_l0(std::shared_ptr<ShardType> shard) {
-    m_levels[0]->append(shard);
+  void append_l0(std::shared_ptr<ShardType> shard, size_t version) {
+    m_levels[0]->append(shard, version);
   }
 
   LevelVector const &get_level_vector() const { return m_levels; }
@@ -249,6 +260,47 @@ public:
     bool validate_tombstone_proportion(level_index level, double max_delete_prop) const {
         long double ts_prop =  (long double) m_levels[level]->get_tombstone_count() / (long double) m_levels[level]->get_record_count();
         return ts_prop <= (long double) max_delete_prop;
+    }
+
+    void print_structure() const {
+      for (size_t i=0; i<m_levels.size(); i++) {
+        fprintf(stdout, "[%ld]:\t", i);
+
+        if (m_levels[i]) {
+          for (size_t j=0; j<m_levels[i]->get_shard_count(); j++) {
+            fprintf(stdout, "(%ld: %ld) ", j, m_levels[i]->get_shard(j)->get_record_count()); 
+          }
+        } else {
+          fprintf(stdout, "[Empty]");
+        }
+
+        fprintf(stdout, "\n");
+      }
+    }    
+
+
+    void merge_structure(const ExtensionStructure* old_structure, size_t version_id = 0) {
+      assert(version_id > 0);
+
+      for (size_t i=0; i<old_structure->m_levels.size(); i++) {
+        for (size_t j=0; j<old_structure->m_levels[i]->get_shard_count(); j++) {
+          if (old_structure->m_levels[i]->get_shard_version(j) > version_id) {
+            m_levels[i]->append(old_structure->m_levels[i]->get_shard_ptr(j));
+          }
+        }
+      }
+    }
+
+    void update_shard_version(size_t version) {
+      assert(version != 0);
+
+      for (size_t i=0; i<m_levels.size(); i++) {
+        for (size_t j=0; j<m_levels[i]->get_shard_count(); j++) {
+          if (m_levels[i]->get_shard_version(j) == 0) {
+            m_levels[i]->set_shard_version(j, version);
+          }
+        }
+      }
     }
 
 private:
