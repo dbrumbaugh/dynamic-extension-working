@@ -286,6 +286,7 @@ if (vldb_bench)
 endif()
 
 if (tail_bench)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/benchmarks")
     # add_executable(config_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/config_sweep.cpp)
     # target_link_libraries(config_sweep PUBLIC gsl pthread atomic)
     # target_include_directories(config_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
