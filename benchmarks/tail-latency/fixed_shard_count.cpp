@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
     size_t buffer_size = 8000;
 
     for (size_t i=0; i<shard_counts.size(); i++) {
-        auto policy = new de::FixedShardCountPolicy<Shard,Q>(buffer_size, shard_counts[i], n);
-        auto extension = new Ext(policy, buffer_size / 4, buffer_size);
+        auto policy = get_policy<Shard, Q>(shard_counts[i], buffer_size, 4, n);
+        auto extension = new Ext(std::move(policy));
 
         /* warmup structure w/ 10% of records */
         size_t warmup = .1 * n;
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        extension->await_next_epoch();
+        extension->await_version();
 
         TIMER_INIT();
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
         auto insert_tput = (size_t) ((double) (n - warmup) / (double) TIMER_RESULT() *1.0e9);
 
-        extension->await_next_epoch();
+        extension->await_version();
         
         /* repeat the queries a bunch of times */
         TIMER_START();

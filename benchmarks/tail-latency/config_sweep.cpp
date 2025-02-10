@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     for (size_t j=0; j<buffers.size(); j++) {
     for (size_t k=0; k<sfs.size(); k++) {
         auto policy = get_policy<Shard, Q>(sfs[k], buffers[j], policies[l]);
-        auto extension = new Ext(policy, buffers[j]/4, buffers[j]);
+        auto extension = new Ext(std::move(policy));
 
         /* warmup structure w/ 10% of records */
         size_t warmup = .1 * n;
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        extension->await_next_epoch();
+        extension->await_version();
 
         TIMER_INIT();
 
@@ -74,10 +74,10 @@ int main(int argc, char **argv) {
             }
             TIMER_STOP();
 
-            //fprintf(stdout, "%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
+            fprintf(stdout, "I\t%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
         }
 
-        extension->await_next_epoch();
+        extension->await_version();
         
         /* repeat the queries a bunch of times */
         for (size_t l=0; l<10; l++) {
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
             res.get();
             TIMER_STOP();
 
-            fprintf(stdout, "%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
+            fprintf(stdout, "Q\t%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
         }
         }
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
         auto res =extension->query(std::move(p));
 
         fprintf(stderr, "%ld\n", res.get());
-        extension->await_next_epoch();
+        extension->await_version();
         delete extension;
     }}}
 
