@@ -45,6 +45,7 @@ public:
 
     for (level_index i = target_level; i > source_level; i--) {
       if (lock_mngr.take_lock(i-1)) {
+        fprintf(stderr, "[I] Taking lock on %ld (%ld)\n", i-1, version->get_id());
         ReconstructionVector recon;
         size_t target_reccnt =
             (i < (level_index)levels.size()) ? levels[i]->get_record_count() : 0;
@@ -56,6 +57,8 @@ public:
 
         recon.add_reconstruction(shards, i, total_reccnt, ReconstructionType::Compact);
         reconstructions.push_back(recon);
+      } else {
+        fprintf(stderr, "[I] Failed to get lock on %ld (%ld)\n", i-1, version->get_id());
       }
     }
     

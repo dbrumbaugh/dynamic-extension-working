@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
         TIMER_START();
         for (size_t j=warmup; j<data.size(); j++) {
             while (!extension->insert(data[j])) {
+                fprintf(stderr, "[B] %ld %ld\n", j, extension->get_record_count());
                 usleep(1);
             }
         }
