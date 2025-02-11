@@ -24,10 +24,9 @@ public:
   LevelingPolicy(size_t scale_factor, size_t buffer_size)
       : m_scale_factor(scale_factor), m_buffer_size(buffer_size) {}
 
-  ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override { 
-    ReconstructionVector reconstructions;
-    return reconstructions;
+  std::vector<ReconstructionVector>
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override { 
+    return {};
   }
 
   ReconstructionVector

@@ -51,13 +51,20 @@ public:
 
     m_sched_thrd.join();
     m_sched_wakeup_thrd.join();
+    m_flush_thread.join();
   }
 
   void schedule_job(std::function<void(void *)> job, size_t size, void *args,
                     size_t type = 0) {
-    std::unique_lock<std::mutex> lk(m_cv_lock);
+
     size_t ts = m_counter.fetch_add(1);
 
+    if (type == 3) {
+      do_flush(Task(size, ts, job, args, type, &m_stats, &m_flush_lock));
+      return;
+    }
+
+    std::unique_lock<std::mutex> lk(m_cv_lock);
     m_stats.job_queued(ts, type, size);
     m_task_queue.push(Task(size, ts, job, args, type, &m_stats));
 
@@ -83,6 +90,9 @@ private:
   std::mutex m_cv_lock;
   std::condition_variable m_cv;
   std::mutex m_queue_lock;
+
+  std::mutex m_flush_lock;
+  std::thread m_flush_thread;
 
   std::thread m_sched_thrd;
   std::thread m_sched_wakeup_thrd;
@@ -120,6 +130,14 @@ private:
         schedule_next();
       }
     } while (!m_shutdown.load());
+  }
+
+  void do_flush(Task task) {
+    m_flush_lock.lock();
+    if (m_flush_thread.joinable()) {
+      m_flush_thread.join();
+    }
+    m_flush_thread = std::thread(task, 0);
   }
 };
 

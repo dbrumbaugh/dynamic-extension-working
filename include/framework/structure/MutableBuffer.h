@@ -104,6 +104,7 @@ public:
   bool is_full() const { return get_record_count() >= m_hwm; }
 
   bool is_at_low_watermark() const { return get_record_count() >= m_lwm; }
+  bool is_at_high_watermark() const { return get_record_count() >= m_hwm; }
 
   size_t get_tombstone_count() const { return m_tscnt.load(); }
 

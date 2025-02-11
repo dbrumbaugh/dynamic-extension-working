@@ -159,7 +159,12 @@ public:
     return cnt;
   }
 
-  inline void perform_reconstruction(ReconstructionTask task, size_t version=0) { 
+  /*
+   * Perform the reconstruction described by task. If the resulting
+   * reconstruction grows the structure (i.e., adds a level), returns
+   * true. Otherwise, returns false.
+   */
+  inline bool perform_reconstruction(ReconstructionTask task, size_t version=0) { 
     /* perform the reconstruction itself */
     std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
@@ -205,10 +210,12 @@ public:
      */
     if (task.target < (level_index)m_levels.size()) {
       m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard), version);
+      return false;
       // fprintf(stderr, "append (no growth)\n");
     } else { /* grow the structure if needed */
       m_levels.push_back(std::make_shared<InternalLevel<ShardType, QueryType>>(task.target));
       m_levels[task.target]->append(std::shared_ptr<ShardType>(new_shard), version);
+      return true;
       // fprintf(stderr, "grow and append\n");
     }
   }
@@ -283,9 +290,13 @@ public:
       assert(version_id > 0);
 
       for (size_t i=0; i<old_structure->m_levels.size(); i++) {
-        for (size_t j=0; j<old_structure->m_levels[i]->get_shard_count(); j++) {
-          if (old_structure->m_levels[i]->get_shard_version(j) > version_id) {
-            m_levels[i]->append(old_structure->m_levels[i]->get_shard_ptr(j));
+        if (m_levels.size() <= i) {
+          m_levels.push_back(old_structure->m_levels[i]);
+        } else {
+          for (size_t j=0; j<old_structure->m_levels[i]->get_shard_count(); j++) {
+            if (old_structure->m_levels[i]->get_shard_version(j) > version_id) {
+              m_levels[i]->append(old_structure->m_levels[i]->get_shard_ptr(j));
+            }
           }
         }
       }

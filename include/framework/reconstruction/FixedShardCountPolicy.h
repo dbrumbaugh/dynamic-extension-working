@@ -24,11 +24,9 @@ public:
   FixedShardCountPolicy(size_t buffer_size, size_t shard_count, size_t max_record_count) 
   : m_buffer_size(buffer_size), m_shard_count(shard_count), m_max_reccnt(max_record_count) {}
 
-  ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override {
-    ReconstructionVector reconstructions;
-    return reconstructions;
-
+  std::vector<ReconstructionVector>
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
+    return {};
   }
 
   ReconstructionVector

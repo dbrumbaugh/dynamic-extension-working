@@ -49,9 +49,9 @@ typedef std::function<void(void *)> Job;
 
 struct Task {
   Task(size_t size, size_t ts, Job job, void *args, size_t type = 0,
-       SchedulerStatistics *stats = nullptr)
+       SchedulerStatistics *stats = nullptr, std::mutex *lk = nullptr)
       : m_job(job), m_size(size), m_timestamp(ts), m_args(args), m_type(type),
-        m_stats(stats) {}
+        m_stats(stats), m_lk(lk) {}
 
   Job m_job;
   size_t m_size;
@@ -59,6 +59,7 @@ struct Task {
   void *m_args;
   size_t m_type;
   SchedulerStatistics *m_stats;
+  std::mutex *m_lk;
 
   friend bool operator<(const Task &self, const Task &other) {
     return self.m_timestamp < other.m_timestamp;
@@ -86,6 +87,10 @@ struct Task {
           std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start)
               .count();
       m_stats->log_time_data(time, m_type);
+    }
+
+    if (m_lk) {
+      m_lk->unlock();
     }
   }
 };

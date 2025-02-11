@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
         for (size_t j=warmup; j<data.size(); j++) {
             while (!extension->insert(data[j])) {
                 usleep(1);
-                fprintf(stderr, "%ld\n", j);
             }
         }
         TIMER_STOP();

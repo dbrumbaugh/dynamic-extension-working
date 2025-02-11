@@ -15,6 +15,7 @@
 #include "util/types.h"
 #include "framework/structure/ExtensionStructure.h"
 #include "framework/scheduling/Version.h"
+#include "framework/scheduling/LockManager.h"
 
 namespace de {
 template<ShardInterface ShardType, QueryInterface<ShardType> QueryType>
@@ -23,7 +24,7 @@ class ReconstructionPolicy {
 
 public:
   ReconstructionPolicy() {}
-  virtual ReconstructionVector get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const = 0;
+  virtual std::vector<ReconstructionVector> get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const = 0;
   virtual ReconstructionVector get_flush_tasks(const Version<ShardType, QueryType> *version) const = 0;
   };
 }

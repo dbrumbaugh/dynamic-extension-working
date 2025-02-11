@@ -52,7 +52,7 @@ public:
 
   /* FIXME: This is just a temporary approach */
   void log_time_data(size_t length, size_t type) {
-    assert(type == 1 || type == 2);
+    assert(type == 1 || type == 2 || type == 3);
 
     if (type == 1) {
       m_type_1_cnt.fetch_add(1);
@@ -61,7 +61,7 @@ public:
       if (length > m_type_1_largest_time) {
         m_type_1_largest_time.store(length);
       }
-    } else {
+    } else if (type == 2) {
       m_type_2_cnt.fetch_add(1);
       m_type_2_total_time.fetch_add(length);
 

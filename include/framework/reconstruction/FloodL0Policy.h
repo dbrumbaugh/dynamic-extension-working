@@ -23,10 +23,9 @@ class FloodL0Policy : public ReconstructionPolicy<ShardType, QueryType> {
 public:
   FloodL0Policy(size_t buffer_size) : m_buffer_size(buffer_size) {}
 
-  ReconstructionVector
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version) const override {
-    ReconstructionVector reconstructions;
-    return reconstructions;
+  std::vector<ReconstructionVector>
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
+    return {};
   }
 
   ReconstructionVector
