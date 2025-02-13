@@ -70,6 +70,13 @@ int main(int argc, char **argv) {
             while (!extension->insert(data[j])) {
                 usleep(1);
             }
+            if (j + 1 != extension->get_record_count()) {
+                fprintf(stderr, "[E] %ld\t%ld\n", j+1, extension->get_record_count());
+                extension->print_structure();
+                fflush(stderr);
+                fflush(stdout);
+            }
+            assert(j+1 == extension->get_record_count());
         }
 
         extension->await_version();
@@ -82,6 +89,11 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "[B] %ld %ld\n", j, extension->get_record_count());
                 usleep(1);
             }
+
+            if (j + 1 != extension->get_record_count()) {
+                fprintf(stderr, "[E] %ld\t%ld\n", j+1, extension->get_record_count());
+            }
+            assert(j+1 == extension->get_record_count());
         }
         TIMER_STOP();
 

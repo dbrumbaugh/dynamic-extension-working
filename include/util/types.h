@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
+#include <memory>
 
 namespace de {
 
@@ -79,6 +80,14 @@ enum class ReconstructionType {
   Merge, /* the merging of shards in two seperate levels */
   Append, /* adding a shard directly to a level */
   Compact /* the merging of shards on one level */
+};
+
+
+template <typename ShardType>
+struct reconstruction_results {
+  std::shared_ptr<ShardType> new_shard;
+  std::vector<std::pair<level_index, const ShardType *>> source_shards;
+  size_t target_level;
 };
 
 typedef struct ReconstructionTask {

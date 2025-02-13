@@ -46,7 +46,21 @@ public:
     return false;
   }
 
+  bool take_buffer_lock() {
+    bool old = m_buffer_lk.load();
+    if (!old) {
+      return m_buffer_lk.compare_exchange_strong(old, true);
+    }
+
+    return false;
+  }
+
+  void release_buffer_lock() {
+    m_buffer_lk.store(false);
+  }
+
 private:
   std::deque<std::atomic<bool>> m_lks;
+  std::atomic<bool> m_buffer_lk;
 };
 }
