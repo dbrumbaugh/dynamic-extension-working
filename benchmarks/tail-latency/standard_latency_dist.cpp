@@ -76,33 +76,32 @@ int main(int argc, char **argv) {
 
         TIMER_INIT();
 
-        TIMER_START();
         for (size_t j=warmup; j<data.size(); j++) {
+            TIMER_START();
             while (!extension->insert(data[j])) {
                 usleep(1);
             }
+            TIMER_STOP();
+            fprintf(stdout, "I\t%ld\n", TIMER_RESULT());
         }
-        TIMER_STOP();
-
-        size_t insert_tput = (double) (n - warmup) / (double) (TIMER_RESULT()) * 1e9;
 
         extension->await_version();
         
         size_t total = 0;
-        TIMER_START();
         /* repeat the queries a bunch of times */
         for (size_t l=0; l<10; l++) {
             for (size_t j=0; j<queries.size(); j++) {
+                TIMER_START();
                 auto q = queries[j];
                 auto res = extension->query(std::move(q));
                 total += res.get();
+                TIMER_STOP();
+                fprintf(stdout, "Q\t%ld\n", TIMER_RESULT());
             }
         }
-        TIMER_STOP();
 
-        size_t query_lat = (double) TIMER_RESULT() / (10*queries.size());
+        fprintf(stderr, "%ld\n", total);
 
-        fprintf(stdout, "S\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", pol, sfs[i], extension->get_height(), extension->get_shard_count(), extension->get_record_count(), total, insert_tput, query_lat);
         extension->print_structure();
         delete extension;
     }
