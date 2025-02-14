@@ -149,12 +149,21 @@ public:
 
     /* refuse to advance head while there is an old with one references */
     if (m_old_head.load().refcnt > 0) {
-      // fprintf(stderr, "[W]: Refusing to advance head due to remaining
-      // reference counts\n");
+      //fprintf(stderr, "[W]: Refusing to advance head due to remaining reference counts\n");
       return false;
     }
 
     m_active_head_advance.store(true);
+
+    if (m_old_head.load().refcnt > 0) {
+      //fprintf(stderr, "[W]: Refusing to advance head due to remaining reference counts [2]\n");
+      m_active_head_advance.store(false);
+      return false;
+    }
+
+    // fprintf(stderr, "[I] Advancing head pointer: %ld %ld %ld\n", m_old_head.load().head_idx, m_head.load().head_idx, new_head);
+    // fprintf(stderr, "[I] Refcnts: %ld %ld\n", m_old_head.load().refcnt, m_head.load().refcnt);
+    
 
     buffer_head new_hd = {new_head, 0};
     buffer_head cur_hd;
@@ -179,6 +188,8 @@ public:
     buffer_head cur_hd, new_hd;
     bool head_acquired = false;
 
+
+    //fprintf(stderr, "[I]: getting head %ld %ld %ld\n", target_head, m_old_head.load().head_idx, m_head.load().head_idx);
     do {
       if (m_old_head.load().head_idx == target_head) {
         cur_hd = m_old_head.load();

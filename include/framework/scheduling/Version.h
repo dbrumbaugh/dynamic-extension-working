@@ -54,10 +54,6 @@ public:
   StructureType *get_mutable_structure() { return m_structure.get(); }
 
   bool set_structure(std::unique_ptr<StructureType> new_struct) {
-    if (m_structure) {
-      return false;
-    }
-
     m_structure = std::move(new_struct);
     return true;
   }
@@ -89,38 +85,18 @@ public:
     return m_buffer->advance_head(new_head);
   }
 
-  void merge_changes_from(Version *old, size_t version_id) {
-    /*
-     * for a maint reconstruction, the buffer head may have advanced
-     * during the reconstruction; we don't need to adjust the buffer
-     * for maintenance reconstructions, so we can simply "catch" the
-     * internal head index up to the current version.
-     */
-    if (old->m_buffer_head > m_buffer_head) {
-      m_buffer_head = old->m_buffer_head;
-    }
-
-    // FIXME: we should also ensure that we don't clobber anything
-    // in the event that multiple concurrent reconstructions affect
-    // the same levels. As it stands, two reconstructions *could* share
-    // source shards, resulting in some records being lost or duplicated.
-    // 
-    // For the moment, I'm being careful to avoid this within the
-    // scheduling policy itself, and only forwarding changes to this
-    // version.
-
-    /* using INVALID_VERSION disables shard reconcilliation */
-    if (version_id == 0) {
-      return;
-    }
-
-    /* add any shards newer than version_id to this version */
-    auto old_structure = old->get_structure();
-    m_structure->merge_structure(old_structure, version_id);
-  }
-
   void update_shard_version(size_t version) {
     m_structure->update_shard_version(version);
+  }
+
+  size_t get_head() {
+    return m_buffer_head;
+  }
+
+
+  void set_head(size_t head) {
+    // fprintf(stderr, "[I] Updating buffer head of %ld to %ld\n", get_id(), head);
+    m_buffer_head = head;
   }
 
 private:

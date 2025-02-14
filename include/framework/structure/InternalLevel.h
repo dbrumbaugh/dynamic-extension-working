@@ -200,7 +200,6 @@ public:
 
   void delete_shard(shard_index shard, bool log_delete=true) {
     size_t before = m_shards.size();
-    fprintf(stderr, "[D]\tReconstruction deleting shard %ld %p\n", shard, m_shards[shard].first.get());
     m_shards.erase(m_shards.begin() + shard);
     size_t after = m_shards.size();
     assert( before > after);
