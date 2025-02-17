@@ -65,6 +65,10 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
     } else {
       for (size_t i = 0; i < 1000; i++) {
         auto insert_idx = idx.fetch_add(1);
+        if (insert_idx >= reccnt) {
+          inserts_done.store(true);
+          break;
+        }
 
         TIMER_START();
         while (!extension->insert((*records)[insert_idx])) {
