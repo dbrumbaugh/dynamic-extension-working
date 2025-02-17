@@ -43,6 +43,8 @@ size_t query_ratio = 3;
 std::atomic<size_t> total_res = 0;
 size_t reccnt = 0;
 
+size_t thrd_cnt = 0;
+
 void operation_thread(Ext *extension, std::vector<QP> *queries,
                       std::vector<Rec> *records) {
   TIMER_INIT();
@@ -58,7 +60,7 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
       auto res = extension->query(std::move(q)).get();
       TIMER_STOP();
 
-      fprintf(stdout, "Q\t%ld\n", TIMER_RESULT());
+      fprintf(stdout, "Q\t%ld\t%ld\n", thrd_cnt, TIMER_RESULT());
 
       total_res.fetch_add(res);
 
@@ -76,7 +78,7 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
         }
         TIMER_STOP();
 
-        fprintf(stdout, "I\t%ld\n", TIMER_RESULT());
+        fprintf(stdout, "I\t%ld\t%ld\n", thrd_cnt, TIMER_RESULT());
 
         if (idx.load() == reccnt) {
           inserts_done.store(true);
@@ -107,18 +109,23 @@ int main(int argc, char **argv) {
   std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
   std::vector<size_t> policies = {
-      0,
+      5
   };
+
+  std::vector<size_t> thread_counts = {1, 2, 4, 8, 16, 32};
 
   reccnt = n;
 
   for (auto pol : policies) {
-    for (size_t i = 0; i < sfs.size(); i++) {
-      auto policy = get_policy<Shard, Q>(sfs[i], buffer_size, pol, n);
+    for (size_t i = 0; i < thread_counts.size(); i++) {
+      auto policy = get_policy<Shard, Q>(sfs[0], buffer_size, pol, n);
       auto config = Conf(std::move(policy));
-      config.recon_enable_maint_on_flush = false;
-      config.recon_maint_disabled = true;
+      config.recon_enable_maint_on_flush = true;
+      config.recon_maint_disabled = false;
       config.buffer_flush_trigger = 4000;
+      config.maximum_threads = thread_counts[i];
+
+      thrd_cnt = thread_counts[i];
 
       auto extension = new Ext(std::move(config));
 
