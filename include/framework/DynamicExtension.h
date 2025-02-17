@@ -759,20 +759,11 @@ private:
   }
 
   int internal_append(const RecordType &rec, bool ts) {
-    size_t max_l0 = (log(get_record_count()) / log(8)) + 1;
-    size_t current_l0 = get_active_version()->get_structure()->get_level_vector()[0]->get_shard_count();
-
-    if (m_buffer->is_at_low_watermark() && current_l0 <= max_l0) {
+    if (m_buffer->is_at_low_watermark()) {
       auto old = false;
       if (m_scheduling_reconstruction.compare_exchange_strong(old, true)) {
         schedule_flush();
       }
-    }
-
-    if (m_buffer->is_at_high_watermark() && current_l0 > max_l0) {
-      schedule_maint_reconstruction(true);
-      // fprintf(stderr, "[I] Current L0: %ld\tMax L0:%ld\n", current_l0, max_l0);
-      return 0;
     }
 
     /* this will fail if the HWM is reached and return 0 */
