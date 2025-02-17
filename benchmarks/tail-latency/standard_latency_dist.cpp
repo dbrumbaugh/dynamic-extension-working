@@ -52,14 +52,14 @@ int main(int argc, char **argv) {
 
     std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
     size_t buffer_size = 8000;
-    std::vector<size_t> policies = {5,};
+    std::vector<size_t> policies = {0,};
 
     for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
         auto policy = get_policy<Shard, Q>(sfs[i], buffer_size, pol, n);
         auto config = Conf(std::move(policy));
-        config.recon_enable_maint_on_flush = true;
-        config.recon_maint_disabled = false;
+        config.recon_enable_maint_on_flush = false;
+        config.recon_maint_disabled = true;
         config.buffer_flush_trigger = 4000;
         
         auto extension = new Ext(std::move(config));

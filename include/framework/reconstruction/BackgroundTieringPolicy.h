@@ -46,9 +46,7 @@ public:
     for (level_index i = target_level; i > source_level; i--) {
       if (lock_mngr.take_lock(i-1)) {
         ReconstructionVector recon;
-        size_t target_reccnt =
-            (i < (level_index)levels.size()) ? levels[i]->get_record_count() : 0;
-        size_t total_reccnt = levels[i - 1]->get_record_count() + target_reccnt;
+        size_t total_reccnt = levels[i - 1]->get_record_count();
         std::vector<ShardID> shards;
         for (ssize_t j=0; j<(ssize_t)levels[i-1]->get_shard_count(); j++) {
           shards.push_back({i-1, j});

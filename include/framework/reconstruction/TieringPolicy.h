@@ -44,12 +44,16 @@ public:
     }
 
     for (level_index i = target_level; i > source_level; i--) {
-      size_t target_reccnt =
-          (i < (level_index)levels.size()) ? levels[i]->get_record_count() : 0;
-      size_t total_reccnt = levels[i - 1]->get_record_count() + target_reccnt;
+      size_t total_reccnt = levels[i - 1]->get_record_count();
 
-      reconstructions.add_reconstruction(i - 1, i, total_reccnt,
-                                         ReconstructionType::Compact);
+      std::vector<ShardID> shards;
+      for (ssize_t j=0; j<(ssize_t)levels[i-1]->get_shard_count(); j++) {
+        shards.push_back({i-1, j});
+      }
+
+      if (total_reccnt > 0 || shards.size() > 0) {
+        reconstructions.add_reconstruction(shards, i, total_reccnt, ReconstructionType::Compact);
+      }
     }
 
     return reconstructions;

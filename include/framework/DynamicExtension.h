@@ -472,12 +472,14 @@ private:
 
       /* advance the buffer head for a flush */
       args->version->advance_buffer_head(new_head);
+
     } else {
       // fprintf(stderr, "[I] Running background reconstruction\n");
     }
 
     /* perform all of the reconstructions */
     auto structure = args->version->get_structure();
+    assert(structure);
       
     for (size_t i = 0; i < args->tasks.size(); i++) {
       reconstructions.emplace_back(structure->perform_reconstruction(args->tasks[i]));
@@ -678,9 +680,11 @@ private:
       return;
     }
 
+    auto active_version = m_active_version.load();
+
     auto *args = new ReconstructionArgs<ShardType, QueryType>();
-    args->version = create_version_flush(nullptr);
-    args->tasks = m_config.recon_policy->get_flush_tasks(get_active_version().get());
+    args->version = create_version_flush(std::unique_ptr<StructureType>(active_version->get_structure()->copy()));
+    args->tasks = m_config.recon_policy->get_flush_tasks(active_version.get());
     args->extension = this;
     args->priority = ReconstructionPriority::FLUSH;
     args->initial_version = INVALID_VERSION;
