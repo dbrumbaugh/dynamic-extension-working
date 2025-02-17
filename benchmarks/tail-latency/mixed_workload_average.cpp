@@ -45,6 +45,11 @@ size_t reccnt = 0;
 
 size_t g_thrd_cnt = 0;
 
+std::atomic<size_t> total_insert_time = 0;
+std::atomic<size_t> total_insert_count = 0;
+std::atomic<size_t> total_query_time = 0;
+std::atomic<size_t> total_query_count = 0;
+
 void operation_thread(Ext *extension, std::vector<QP> *queries,
                       std::vector<Rec> *records) {
   TIMER_INIT();
@@ -52,6 +57,7 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
     auto type = rand() % 10;
 
     if (type < 8) {
+      total_query_count.fetch_add(1);
       auto q_idx = rand() % queries->size();
 
       auto q = (*queries)[q_idx];
@@ -60,11 +66,10 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
       auto res = extension->query(std::move(q)).get();
       TIMER_STOP();
 
-      fprintf(stdout, "Q\t%ld\t%ld\n", g_thrd_cnt, TIMER_RESULT());
-
+      total_query_time.fetch_add(TIMER_RESULT());
       total_res.fetch_add(res);
-
     } else {
+      TIMER_START();
       for (size_t i = 0; i < 1000; i++) {
         auto insert_idx = idx.fetch_add(1);
         if (insert_idx >= reccnt) {
@@ -72,18 +77,16 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
           break;
         }
 
-        TIMER_START();
         while (!extension->insert((*records)[insert_idx])) {
           usleep(1);
         }
-        TIMER_STOP();
-
-        fprintf(stdout, "I\t%ld\t%ld\n", g_thrd_cnt, TIMER_RESULT());
 
         if (idx.load() == reccnt) {
           inserts_done.store(true);
         }
       }
+      TIMER_STOP();
+      total_insert_time.fetch_add(TIMER_RESULT());
     }
   }
 }
@@ -127,6 +130,10 @@ int main(int argc, char **argv) {
 
       g_thrd_cnt = internal_thread_cnt;
 
+      total_insert_time.store(0);
+      total_query_time.store(0);
+      total_query_count.store(0);
+      
       auto extension = new Ext(std::move(config));
 
       /* warmup structure w/ 10% of records */
@@ -153,6 +160,12 @@ int main(int argc, char **argv) {
       }
 
       fprintf(stderr, "%ld\n", total_res.load());
+
+      size_t insert_tput = ((double)(n - warmup) / (double) total_insert_time) *1e9;
+      size_t query_lat = (double) total_query_time.load() / (double) total_query_count.load();
+
+      fprintf(stdout, "%ld\t%ld\t%ld\n", internal_thread_cnt, insert_tput, query_lat);
+
       total_res.store(0);
       inserts_done.store(false);
       delete extension;
