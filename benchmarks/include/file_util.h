@@ -1,198 +1,219 @@
 #pragma once
 
-#include <cstdlib>
+#include <algorithm>
 #include <cstdio>
-#include <iostream>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <gsl/gsl_rng.h>
+#include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <gsl/gsl_rng.h>
-#include <cstring>
 #include <vector>
-#include <memory>
 
 #include "psu-util/progress.h"
 
-
 template <typename QP>
-static std::vector<QP> read_lookup_queries(std::string fname, double selectivity) {
-    std::vector<QP> queries;
+static std::vector<QP> read_lookup_queries(std::string fname,
+                                           double selectivity) {
+  std::vector<QP> queries;
 
-    FILE *qf = fopen(fname.c_str(), "r");
+  FILE *qf = fopen(fname.c_str(), "r");
 
-    if (!qf) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
+  if (!qf) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  size_t start, stop;
+  double sel;
+  while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF) {
+    if (start < stop && std::abs(sel - selectivity) < 0.1) {
+      QP q;
+      q.target_key = start;
+      queries.push_back(q);
     }
+  }
+  fclose(qf);
 
-    size_t start, stop;
-    double sel;
-    while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF) {
-        if (start < stop && std::abs(sel - selectivity) < 0.1) {
-            QP q;
-            q.target_key = start;
-            queries.push_back(q);
-        }
-    }
-    fclose(qf);
-
-    return queries;
+  return queries;
 }
 
 template <typename QP>
-static std::vector<QP> generate_string_lookup_queries(std::vector<char *> &strings, size_t cnt, gsl_rng *rng) {
-    std::vector<QP> queries;
+static std::vector<QP>
+generate_string_lookup_queries(std::vector<char *> &strings, size_t cnt,
+                               gsl_rng *rng) {
+  std::vector<QP> queries;
 
-    for (size_t i=0; i<cnt; i++) {
-        auto idx = gsl_rng_uniform_int(rng, strings.size());
-        QP q;
-        q.search_key = strings[idx];
-        queries.push_back(q);
-    }
+  for (size_t i = 0; i < cnt; i++) {
+    auto idx = gsl_rng_uniform_int(rng, strings.size());
+    QP q;
+    q.search_key = strings[idx];
+    queries.push_back(q);
+  }
 
-    return queries;
+  return queries;
 }
 
 template <typename QP>
-static std::vector<QP> read_range_queries(std::string &fname, double selectivity) {
-    std::vector<QP> queries;
+static std::vector<QP> read_range_queries(std::string &fname,
+                                          double selectivity) {
+  std::vector<QP> queries;
 
-    FILE *qf = fopen(fname.c_str(), "r");
+  FILE *qf = fopen(fname.c_str(), "r");
 
-    if (!qf) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
+  if (!qf) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  size_t start, stop;
+  double sel;
+  while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF) {
+    if (start < stop && std::abs(sel - selectivity) < 0.00001) {
+      QP q;
+      q.lower_bound = start;
+      q.upper_bound = stop;
+
+      queries.push_back(q);
     }
+  }
+  fclose(qf);
 
-    size_t start, stop;
-    double sel;
-    while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF) {
-        if (start < stop && std::abs(sel - selectivity) < 0.00001) {
-            QP q;
-            q.lower_bound = start;
-            q.upper_bound = stop;
-
-            queries.push_back(q);
-        }
-    }
-    fclose(qf);
-
-    return queries;
+  return queries;
 }
-
 
 template <typename QP>
-static std::vector<QP> read_binary_knn_queries(std::string fname, size_t k, size_t n) {
-    std::vector<QP> queries;
-    queries.reserve(n);
+static std::vector<QP> read_binary_knn_queries(std::string fname, size_t k,
+                                               size_t n) {
+  std::vector<QP> queries;
+  queries.reserve(n);
 
-    std::fstream file;
-    file.open(fname, std::ios::in | std::ios::binary);
+  std::fstream file;
+  file.open(fname, std::ios::in | std::ios::binary);
 
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  uint32_t dim;
+  uint32_t cnt;
+
+  file.read((char *)&(cnt), sizeof(cnt));
+  file.read((char *)&(dim), sizeof(dim));
+
+  if (n > cnt) {
+    n = cnt;
+  }
+
+  for (size_t i = 0; i < n; i++) {
+    QP query;
+    for (size_t j = 0; j < dim; j++) {
+      uint64_t val;
+      file.read((char *)&(val), sizeof(uint64_t));
+      query.point.data[j] = val;
     }
+    query.k = k;
+    queries.push_back(query);
+  }
 
-
-    uint32_t dim;
-    uint32_t cnt;
-
-    file.read((char*) &(cnt), sizeof(cnt));
-    file.read((char*) &(dim), sizeof(dim));
-
-    if (n > cnt) {
-        n = cnt;
-    }
-
-    for (size_t i=0; i<n; i++) {
-        QP query;
-        for (size_t j=0; j<dim; j++) {
-            uint64_t val;
-            file.read((char*) &(val), sizeof(uint64_t));
-            query.point.data[j] = val;
-        }
-        query.k = k;
-        queries.push_back(query);
-    }
-
-    return queries;
+  return queries;
 }
-
 
 template <typename QP>
 static std::vector<QP> read_knn_queries(std::string fname, size_t k) {
-    std::vector<QP> queries;
+  std::vector<QP> queries;
 
-    FILE *qf = fopen(fname.c_str(), "r");
-    char *line = NULL;
-    size_t len = 0;
+  FILE *qf = fopen(fname.c_str(), "r");
+  char *line = NULL;
+  size_t len = 0;
 
-    if (!qf) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
-    }
+  if (!qf) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
 
-    while (getline(&line, &len, qf) > 0) {
-        char *token;
-        QP query;
-        size_t idx = 0;
+  while (getline(&line, &len, qf) > 0) {
+    char *token;
+    QP query;
+    size_t idx = 0;
 
-        token = strtok(line, " ");
-        do {
-            query.point.data[idx++] = atof(token);
-        } while ((token = strtok(NULL, " ")));
+    token = strtok(line, " ");
+    do {
+      query.point.data[idx++] = atof(token);
+    } while ((token = strtok(NULL, " ")));
 
-        query.k = k;
-        queries.emplace_back(query);
-    }
+    query.k = k;
+    queries.emplace_back(query);
+  }
 
-    free(line);
-    fclose(qf);
+  free(line);
+  fclose(qf);
 
-    return queries;
+  return queries;
 }
 
-template<typename R>
-static std::vector<R> read_sosd_file(std::string &fname, size_t n) {
-    std::fstream file;
-    file.open(fname, std::ios::in | std::ios::binary);
-
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
-    }
-
+template <typename R>
+static std::vector<R> generate_uniform(size_t n) {
     std::vector<R> records(n);
+
     for (size_t i=0; i<n; i++) {
-        decltype(R::key) k;
-        file.read((char*) &(k), sizeof(R::key));
-        records[i].key = k;
+        records[i].key = i;
         records[i].value = i;
     }
 
+    std::random_shuffle(records.begin(), records.end());
+
     return records;
 }
 
-template<typename K, typename V>
-static std::vector<std::pair<K, V>> read_sosd_file_pair(std::string &fname, size_t n) {
-    std::fstream file;
-    file.open(fname, std::ios::in | std::ios::binary);
+template <typename R>
+static std::vector<R> read_sosd_file(std::string &fname, size_t n) {
+  if (fname.starts_with("unif")) {
+    return generate_uniform<R>(n);
+  }
 
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
-    }
+  std::fstream file;
+  file.open(fname, std::ios::in | std::ios::binary);
 
-    std::vector<std::pair<K,V>> records(n);
-    for (size_t i=0; i<n; i++) {
-        K k;
-        file.read((char*) &(k), sizeof(K));
-        records[i].first = k;
-        records[i].second = i;
-    }
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
 
-    return records;
+  std::vector<R> records(n);
+  for (size_t i = 0; i < n; i++) {
+    decltype(R::key) k;
+    file.read((char *)&(k), sizeof(R::key));
+    records[i].key = k;
+    records[i].value = i;
+  }
+
+  return records;
+}
+
+template <typename K, typename V>
+static std::vector<std::pair<K, V>> read_sosd_file_pair(std::string &fname,
+                                                        size_t n) {
+  std::fstream file;
+  file.open(fname, std::ios::in | std::ios::binary);
+
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  std::vector<std::pair<K, V>> records(n);
+  for (size_t i = 0; i < n; i++) {
+    K k;
+    file.read((char *)&(k), sizeof(K));
+    records[i].first = k;
+    records[i].second = i;
+  }
+
+  return records;
 }
 
 /*
@@ -203,98 +224,102 @@ static std::vector<std::pair<K, V>> read_sosd_file_pair(std::string &fname, size
  */
 template <typename R, size_t D>
 static std::vector<R> read_vector_file(std::string &fname, size_t n) {
-    std::fstream file;
-    file.open(fname, std::ios::in);
+  std::fstream file;
+  file.open(fname, std::ios::in);
 
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  std::vector<R> records;
+  records.reserve(n);
+
+  for (size_t i = 0; i < n; i++) {
+    std::string line;
+    if (!std::getline(file, line, '\n'))
+      break;
+
+    std::stringstream line_stream(line);
+    R rec;
+    for (size_t j = 0; j < D; j++) {
+      std::string dim;
+      if (!std::getline(line_stream, dim, ' '))
+        break;
+
+      rec.data[j] = atof(dim.c_str());
     }
+    records.emplace_back(rec);
+  }
 
-    std::vector<R> records;
-    records.reserve(n);
-
-    for (size_t i=0; i<n; i++) {
-        std::string line;
-        if (!std::getline(file, line, '\n')) break;
-
-        std::stringstream line_stream(line);
-        R rec;
-        for (size_t j=0; j<D; j++) {
-            std::string dim;
-            if (!std::getline(line_stream, dim, ' ')) break;
-
-            rec.data[j] = atof(dim.c_str());
-        }
-        records.emplace_back(rec);
-    }
-
-    return records;
+  return records;
 }
 
 template <typename R>
 static std::vector<R> read_binary_vector_file(std::string &fname, size_t n) {
-    std::fstream file;
-    file.open(fname, std::ios::in | std::ios::binary);
+  std::fstream file;
+  file.open(fname, std::ios::in | std::ios::binary);
 
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  std::vector<R> records;
+  records.reserve(n);
+
+  uint32_t dim;
+  uint32_t cnt;
+
+  file.read((char *)&(cnt), sizeof(cnt));
+  file.read((char *)&(dim), sizeof(dim));
+
+  if (n > cnt) {
+    n = cnt;
+  }
+
+  R rec;
+  for (size_t i = 0; i < n; i++) {
+    for (size_t j = 0; j < dim; j++) {
+      uint64_t val;
+      file.read((char *)&(val), sizeof(uint64_t));
+      rec.data[j] = val;
     }
 
-    std::vector<R> records;
-    records.reserve(n);
+    records.emplace_back(rec);
+  }
 
-    uint32_t dim;
-    uint32_t cnt;
-
-    file.read((char*) &(cnt), sizeof(cnt));
-    file.read((char*) &(dim), sizeof(dim));
-
-    if (n > cnt) {
-        n = cnt;
-    }
-
-    R rec;
-    for (size_t i=0; i<n; i++) {
-        for (size_t j=0; j<dim; j++) {
-            uint64_t val;
-            file.read((char*) &(val), sizeof(uint64_t));
-            rec.data[j] = val;
-        }
-
-        records.emplace_back(rec);
-    }
-
-    return records;
+  return records;
 }
 
-[[maybe_unused]] static std::vector<char *> read_string_file(std::string fname, size_t n=10000000) {
+[[maybe_unused]] static std::vector<char *>
+read_string_file(std::string fname, size_t n = 10000000) {
 
-    std::fstream file;
-    file.open(fname, std::ios::in);
+  std::fstream file;
+  file.open(fname, std::ios::in);
 
-    if (!file.is_open()) {
-        fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
-        exit(EXIT_FAILURE);
-    }
+  if (!file.is_open()) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
 
-    std::vector<char *> strings;
-    strings.reserve(n);
+  std::vector<char *> strings;
+  strings.reserve(n);
 
-    size_t i=0;
-    std::string line;
-    while (i < n && std::getline(file, line, '\n')) {
-        strings.emplace_back(strdup(line.c_str()));
-        i++;
-        psudb::progress_update((double) i / (double) n, "Reading file:");
-    }
+  size_t i = 0;
+  std::string line;
+  while (i < n && std::getline(file, line, '\n')) {
+    strings.emplace_back(strdup(line.c_str()));
+    i++;
+    psudb::progress_update((double)i / (double)n, "Reading file:");
+  }
 
-    return strings;
+  return strings;
 }
 
-[[maybe_unused]] static void destroy_string_file_data(std::vector<char *> &data) {
-    for (size_t i=0; i<data.size(); i++) {
-        delete data[i];
-    }
+[[maybe_unused]] static void
+destroy_string_file_data(std::vector<char *> &data) {
+  for (size_t i = 0; i < data.size(); i++) {
+    delete data[i];
+  }
 }
