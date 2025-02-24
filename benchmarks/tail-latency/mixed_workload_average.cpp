@@ -38,7 +38,7 @@ typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE,
 std::atomic<size_t> idx;
 std::atomic<bool> inserts_done = false;
 
-size_t query_ratio = 3;
+ssize_t query_ratio = 5;
 
 std::atomic<size_t> total_res = 0;
 size_t reccnt = 0;
@@ -56,7 +56,7 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
   while (!inserts_done.load()) {
     auto type = rand() % 10;
 
-    if (type < 8) {
+    if (type < query_ratio) {
       total_query_count.fetch_add(1);
       auto q_idx = rand() % queries->size();
 

@@ -317,6 +317,12 @@ if (tail_bench)
     target_link_libraries(mixed_workload_average PUBLIC gsl pthread atomic)
     target_include_directories(mixed_workload_average PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(mixed_workload_average PUBLIC -mcx16)
+
+    add_executable(insert_query_threads ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/insert_query_threads.cpp)
+    target_link_libraries(insert_query_threads PUBLIC gsl pthread atomic)
+    target_include_directories(insert_query_threads PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(insert_query_threads PUBLIC -mcx16)
+
 endif()
 
 if (bench) 

@@ -82,12 +82,7 @@ public:
 
   bool advance_buffer_head(size_t new_head) {
     m_buffer_head = new_head;
-
-    while (!m_buffer->advance_head(new_head)) {
-      usleep(1);
-    }
-
-    return true;
+    return m_buffer->advance_head(new_head);
   }
 
   void update_shard_version(size_t version) {

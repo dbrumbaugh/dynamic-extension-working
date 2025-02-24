@@ -38,20 +38,22 @@ typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE,
 std::atomic<size_t> idx;
 std::atomic<bool> inserts_done = false;
 
-ssize_t query_ratio = 3;
+ssize_t query_ratio = 8;
 
 std::atomic<size_t> total_res = 0;
 size_t reccnt = 0;
 
 size_t g_thrd_cnt = 0;
 
-void operation_thread(Ext *extension, std::vector<QP> *queries,
-                      std::vector<Rec> *records) {
+std::atomic<size_t> total_insert_time = 0;
+std::atomic<size_t> total_insert_count = 0;
+std::atomic<size_t> total_query_time = 0;
+std::atomic<size_t> total_query_count = 0;
+
+void query_thread(Ext *extension, std::vector<QP> *queries) {
   TIMER_INIT();
   while (!inserts_done.load()) {
-    auto type = rand() % 10;
-
-    if (type < query_ratio) {
+      total_query_count.fetch_add(1);
       auto q_idx = rand() % queries->size();
 
       auto q = (*queries)[q_idx];
@@ -60,32 +62,24 @@ void operation_thread(Ext *extension, std::vector<QP> *queries,
       auto res = extension->query(std::move(q)).get();
       TIMER_STOP();
 
-      fprintf(stdout, "Q\t%ld\t%ld\n", g_thrd_cnt, TIMER_RESULT());
-
+      total_query_time.fetch_add(TIMER_RESULT());
       total_res.fetch_add(res);
+  }
+}
 
-    } else {
-      for (size_t i = 0; i < 1000; i++) {
-        auto insert_idx = idx.fetch_add(1);
-        if (insert_idx >= reccnt) {
-          inserts_done.store(true);
-          break;
-        }
+void insert_thread(Ext *extension, std::vector<Rec> *records, size_t start_idx, size_t stop_idx) {
+  TIMER_INIT();
 
-        TIMER_START();
-        while (!extension->insert((*records)[insert_idx])) {
-          usleep(1);
-        }
-        TIMER_STOP();
+  TIMER_START();
 
-        fprintf(stdout, "I\t%ld\t%ld\n", g_thrd_cnt, TIMER_RESULT());
-
-        if (idx.load() == reccnt) {
-          inserts_done.store(true);
-        }
-      }
+  for (size_t i=start_idx; i<stop_idx; i++) {
+    while (!extension->insert((*records)[i])) {
+      usleep(1);
     }
   }
+
+  TIMER_STOP();
+  total_insert_time.fetch_add(TIMER_RESULT());
 }
 
 void usage(char *progname) {
@@ -112,7 +106,10 @@ int main(int argc, char **argv) {
       5
   };
 
-  std::vector<size_t> thread_counts = {1, 2, 4, 8, 16, 32};
+  std::vector<size_t> thread_counts = {8, 16, 32};
+
+  size_t insert_threads = 1;
+  size_t query_threads = 6;
 
   reccnt = n;
 
@@ -127,6 +124,10 @@ int main(int argc, char **argv) {
 
       g_thrd_cnt = internal_thread_cnt;
 
+      total_insert_time.store(0);
+      total_query_time.store(0);
+      total_query_count.store(0);
+      
       auto extension = new Ext(std::move(config));
 
       /* warmup structure w/ 10% of records */
@@ -141,18 +142,39 @@ int main(int argc, char **argv) {
 
       idx.store(warmup);
 
-      size_t thrd_cnt = 8;
-      std::thread thrds[thrd_cnt];
+      std::thread i_thrds[insert_threads];
+      std::thread q_thrds[query_threads];
 
-      for (size_t i=0; i<thrd_cnt; i++) {
-        thrds[i] = std::thread(operation_thread, extension, &queries, &data);
+      size_t per_insert_thrd = (n - warmup) / insert_threads;
+      size_t start = warmup;
+
+      for (size_t i=0; i<insert_threads; i++) {
+        i_thrds[i] = std::thread(insert_thread, extension, &data, start, start + per_insert_thrd);
+        start += per_insert_thrd;
       }
 
-      for (size_t i=0; i<thrd_cnt; i++) {
-        thrds[i].join();
+      for (size_t i=0; i<query_threads; i++) {
+        q_thrds[i] = std::thread(query_thread, extension, &queries);
+      }
+
+      for (size_t i=0; i<insert_threads; i++) {
+        i_thrds[i].join();
+      }
+
+      inserts_done.store(true);
+
+      for (size_t i=0; i<query_threads; i++) {
+        q_thrds[i].join();
       }
 
       fprintf(stderr, "%ld\n", total_res.load());
+
+      size_t insert_tput = ((double)(n - warmup) / (double) total_insert_time) *1e9;
+      size_t query_lat = (double) total_query_time.load() / (double) total_query_count.load();
+
+      fprintf(stdout, "%ld\t%ld\t%ld\n", internal_thread_cnt, insert_tput, query_lat);
+      fflush(stdout);
+
       total_res.store(0);
       inserts_done.store(false);
       delete extension;
