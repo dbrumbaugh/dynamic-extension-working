@@ -37,10 +37,10 @@
 START_TEST(t_point_lookup_query)
 {
     auto buffer = create_test_mbuffer<R>(1000);
-    auto shard = Shard(buffer->get_buffer_view());
+    auto shard = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
 
     {
-        auto bv = buffer->get_buffer_view();
+        auto bv = buffer->get_buffer_view(buffer->debug_get_head());
         for (size_t i=0; i<bv.get_record_count(); i++) {
             auto key = bv.get(i)->rec.key;
 
@@ -73,7 +73,7 @@ START_TEST(t_buffer_point_lookup)
 
     auto buffer = create_test_mbuffer<R>(1000);
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         for (int i=view.get_record_count()-1; i>=0; i--) {
             pl::Query<Shard>::Parameters parms = {view.get(i)->rec.key};
             auto local_query = pl::Query<Shard>::local_preproc_buffer(&view, &parms);

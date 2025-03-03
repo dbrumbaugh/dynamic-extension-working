@@ -42,7 +42,7 @@ static gsl_rng *g_rng;
 START_TEST(t_irs)
 {
     auto buffer = create_sequential_mbuffer<R>(100, 1000);
-    auto shard = Shard(buffer->get_buffer_view());
+    auto shard = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
 
     size_t k = 5;
     irs::Query<Shard>::Parameters parms;
@@ -80,7 +80,7 @@ START_TEST(t_buffer_irs)
     parms.rng = g_rng;
 
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto query = irs::Query<Shard>::local_preproc_buffer(&view, &parms);
         irs::Query<Shard>::distribute_query(&parms, {}, query);
         auto result = irs::Query<Shard>::local_query_buffer(query); 
@@ -103,8 +103,8 @@ START_TEST(t_irs_merge)
     auto buffer1 = create_sequential_mbuffer<R>(100, 200);
     auto buffer2 = create_sequential_mbuffer<R>(400, 1000);
 
-    auto shard1 = Shard(buffer1->get_buffer_view());
-    auto shard2 = Shard(buffer2->get_buffer_view());
+    auto shard1 = Shard(buffer1->get_buffer_view(buffer1->debug_get_head()));
+    auto shard2 = Shard(buffer2->get_buffer_view(buffer2->debug_get_head()));
 
     size_t k = 10;
     irs::Query<Shard>::Parameters parms;

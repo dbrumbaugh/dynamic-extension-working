@@ -5,6 +5,7 @@
 #pragma once
 #include <deque>
 #include <atomic>
+#include <cassert>
 
 namespace de {
 class LockManager {
@@ -13,6 +14,8 @@ public:
     for (size_t i=0; i < levels; i++) {
       m_lks.emplace_back(false);
     }
+
+    m_last_unlocked_version = 0;
   }
 
   ~LockManager() = default;
@@ -21,25 +24,38 @@ public:
     m_lks.emplace_back(false);
   }
 
-  void release_lock(size_t idx) {
+  void release_lock(size_t idx, size_t version) {
     if (idx < m_lks.size()) {
-      m_lks[idx].store(false);
+      assert(m_lks.at(idx).load() == true);
+      m_lks.at(idx).store(false);
+
+      while (m_last_unlocked_version.load() < version) {
+        auto tmp = m_last_unlocked_version.load();
+        m_last_unlocked_version.compare_exchange_strong(tmp, version);
+      }
     }
   }
 
-  bool is_locked(size_t idx) {
+  bool is_locked(size_t idx, size_t version) {
     if (idx < m_lks.size()) {
-      return m_lks[idx].load();
+      return m_lks.at(idx).load() && m_last_unlocked_version <= version;
     }
 
     return false;
   }
 
-  bool take_lock(size_t idx) {
+  bool take_lock(size_t idx, size_t version) {
     if (idx < m_lks.size()) {
-      bool old = m_lks[idx].load();
+      bool old = m_lks.at(idx).load();
       if (!old) {
-        return m_lks[idx].compare_exchange_strong(old, true);
+        auto result = m_lks.at(idx).compare_exchange_strong(old, true);
+
+        if (m_last_unlocked_version.load() > version) {
+          m_lks.at(idx).store(false);
+          return false;
+        }
+
+        return result;
       }
     }
 
@@ -55,6 +71,10 @@ public:
     return false;
   }
 
+  bool is_buffer_locked() {
+    return m_buffer_lk.load();
+  }
+
   void release_buffer_lock() {
     m_buffer_lk.store(false);
   }
@@ -62,5 +82,6 @@ public:
 private:
   std::deque<std::atomic<bool>> m_lks;
   std::atomic<bool> m_buffer_lk;
+  std::atomic<size_t> m_last_unlocked_version;
 };
 }

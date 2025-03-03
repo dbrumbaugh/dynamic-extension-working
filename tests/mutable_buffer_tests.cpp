@@ -38,7 +38,7 @@ START_TEST(t_create)
     ck_assert_int_eq(buffer->get_tombstone_count(), 0);
 
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         ck_assert_int_eq(view.get_tombstone_count(), 0);
         ck_assert_int_eq(view.get_record_count(), 0);
     }
@@ -68,7 +68,7 @@ START_TEST(t_insert)
         cnt++;
 
         ck_assert_int_eq(buffer->get_record_count(), cnt);
-        ck_assert_int_eq(buffer->get_buffer_view().get_record_count(), cnt);
+        ck_assert_int_eq(buffer->get_buffer_view(buffer->debug_get_head()).get_record_count(), cnt);
         ck_assert_int_eq(buffer->get_tail(), cnt);
     }
 
@@ -85,7 +85,7 @@ START_TEST(t_insert)
         cnt++;
 
         ck_assert_int_eq(buffer->get_record_count(), cnt);
-        ck_assert_int_eq(buffer->get_buffer_view().get_record_count(), cnt);
+        ck_assert_int_eq(buffer->get_buffer_view(buffer->debug_get_head()).get_record_count(), cnt);
 
         ck_assert_int_eq(buffer->get_tombstone_count(), 0);
         ck_assert_int_eq(buffer->is_at_low_watermark(), true);
@@ -131,14 +131,14 @@ START_TEST(t_advance_head)
     Wrapped<Rec> *view_records = new Wrapped<Rec>[buffer->get_record_count()];
     {
         /* get a view of the pre-advanced state */
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         ck_assert_int_eq(view.get_record_count(), cnt);
         view.copy_to_buffer((psudb::byte *) view_records);
 
         /* advance the head */
         ck_assert_int_eq(buffer->advance_head(new_head), 1);
         ck_assert_int_eq(buffer->get_record_count(), 25);
-        ck_assert_int_eq(buffer->get_buffer_view().get_record_count(), 25);
+        ck_assert_int_eq(buffer->get_buffer_view(buffer->debug_get_head()).get_record_count(), 25);
         ck_assert_int_eq(view.get_record_count(), cnt);
         ck_assert_int_eq(buffer->get_available_capacity(), 200 - cnt);
 
@@ -272,7 +272,7 @@ START_TEST(t_bview_get)
 
     {
         /* get a view of the pre-advanced state */
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto reccnt = view.get_record_count();
 
         /* scan the records in the view */
@@ -291,7 +291,7 @@ START_TEST(t_bview_get)
 
     {
         /* get a new view (should have fewer records) */
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto reccnt = view.get_record_count();
 
         /* verify the scan again */
@@ -311,7 +311,7 @@ START_TEST(t_bview_get)
 
     {
         /* get a new view (should have fewer records) */
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto reccnt = view.get_record_count();
 
         /* verify the scan again */
@@ -364,7 +364,7 @@ START_TEST(t_bview_delete)
     Rec fdr2 = {300, 300};
     {
         /* get a new view (should have fewer records) */
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         ck_assert_int_eq(view.delete_record(dr1), 1);
         ck_assert_int_eq(view.delete_record(dr2), 1);
         ck_assert_int_eq(view.delete_record(dr3), 1);

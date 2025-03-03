@@ -40,7 +40,7 @@
 START_TEST(t_range_query)
 {
     auto buffer = create_sequential_mbuffer<R>(100, 1000);
-    auto shard = Shard(buffer->get_buffer_view());
+    auto shard = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
 
     rq::Query<Shard>::Parameters parms = {300, 500};
 
@@ -67,7 +67,7 @@ START_TEST(t_buffer_range_query)
     rq::Query<Shard>::Parameters parms = {300, 500};
 
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto query = rq::Query<Shard>::local_preproc_buffer(&view, &parms);
         auto result = rq::Query<Shard>::local_query_buffer(query); 
         delete query;
@@ -89,8 +89,8 @@ START_TEST(t_range_query_merge)
     auto buffer1 = create_sequential_mbuffer<R>(100, 200);
     auto buffer2 = create_sequential_mbuffer<R>(400, 1000);
 
-    auto shard1 = Shard(buffer1->get_buffer_view());
-    auto shard2 = Shard(buffer2->get_buffer_view());
+    auto shard1 = Shard(buffer1->get_buffer_view(buffer1->debug_get_head()));
+    auto shard2 = Shard(buffer2->get_buffer_view(buffer2->debug_get_head()));
 
     rq::Query<Shard>::Parameters parms = {150, 500};
 

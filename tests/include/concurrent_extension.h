@@ -327,7 +327,6 @@ START_TEST(t_static_structure)
     }
 
     gsl_rng_free(rng);
-    delete flat;
     delete test_de;
 }
 END_TEST

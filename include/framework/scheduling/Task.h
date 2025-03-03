@@ -1,7 +1,7 @@
 /*
  * include/framework/scheduling/Task.h
  *
- * Copyright (C) 2023-2024 Douglas B. Rumbaugh <drumbaugh@psu.edu>
+ * Copyright (C) 2023-2025 Douglas B. Rumbaugh <drumbaugh@psu.edu>
  *
  * Distributed under the Modified BSD License.
  *
@@ -16,6 +16,7 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <condition_variable>
 
 #include "framework/scheduling/Version.h"
 #include "framework/scheduling/statistics.h"
@@ -49,9 +50,9 @@ typedef std::function<void(void *)> Job;
 
 struct Task {
   Task(size_t size, size_t ts, Job job, void *args, size_t type = 0,
-       SchedulerStatistics *stats = nullptr, std::mutex *lk = nullptr)
+       SchedulerStatistics *stats = nullptr, std::mutex *lk = nullptr, std::condition_variable *cv=nullptr)
       : m_job(job), m_size(size), m_timestamp(ts), m_args(args), m_type(type),
-        m_stats(stats), m_lk(lk) {}
+        m_stats(stats), m_lk(lk), m_cv(cv) {}
 
   Job m_job;
   size_t m_size;
@@ -60,6 +61,7 @@ struct Task {
   size_t m_type;
   SchedulerStatistics *m_stats;
   std::mutex *m_lk;
+  std::condition_variable *m_cv;
 
   friend bool operator<(const Task &self, const Task &other) {
     return self.m_timestamp < other.m_timestamp;
@@ -91,6 +93,10 @@ struct Task {
 
     if (m_lk) {
       m_lk->unlock();
+    }
+
+    if (m_cv) {
+      m_cv->notify_all();
     }
   }
 };

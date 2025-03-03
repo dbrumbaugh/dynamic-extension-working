@@ -41,7 +41,7 @@ typedef wss::Query<Shard> Q;
 START_TEST(t_wss_query)
 {
     auto buffer = create_weighted_mbuffer<R>(1000);
-    auto shard = Shard(buffer->get_buffer_view());
+    auto shard = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
     auto rng = gsl_rng_alloc(gsl_rng_mt19937);
 
     size_t k = 20;
@@ -77,7 +77,7 @@ START_TEST(t_buffer_wss_query)
     parms.sample_size = k;
 
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
         auto query = Q::local_preproc_buffer(&view, &parms);
         Q::distribute_query(&parms, {}, query);
         auto result = Q::local_query_buffer(query);

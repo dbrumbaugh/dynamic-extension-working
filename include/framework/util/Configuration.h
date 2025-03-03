@@ -27,7 +27,7 @@ class DEConfiguration {
     /* buffer parameters */
     size_t buffer_count = 1;
     size_t buffer_size = 8000;
-    size_t buffer_flush_trigger = buffer_size / 4;
+    size_t buffer_flush_trigger = buffer_size / 2;
 
     /* reconstruction triggers */
     bool recon_enable_seek_trigger = false;
@@ -44,7 +44,7 @@ class DEConfiguration {
     size_t minimum_query_threads = 4;
     size_t maximum_memory_usage = 0; /* o for unbounded */
 
-    size_t buffer_flush_query_preemption_trigger = 10;
+    size_t buffer_flush_query_preemption_trigger = UINT64_MAX;
 
 };
 

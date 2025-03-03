@@ -1,7 +1,7 @@
 /*
  * include/framework/structure/BufferView.h
  *
- * Copyright (C) 2023-2024 Douglas B. Rumbaugh <drumbaugh@psu.edu>
+ * Copyright (C) 2023-2025 Douglas B. Rumbaugh <drumbaugh@psu.edu>
  *
  * Distributed under the Modified BSD License.
  *
@@ -20,8 +20,6 @@
 
 namespace de {
 
-typedef std::function<void(void)> ReleaseFunction;
-
 template <RecordInterface R> class BufferView {
 public:
   BufferView() = default;
@@ -35,7 +33,6 @@ public:
 
   BufferView(BufferView &&other)
       : m_data(std::exchange(other.m_data, nullptr)),
-        m_release(std::move(other.m_release)),
         m_head(std::exchange(other.m_head, 0)),
         m_tail(std::exchange(other.m_tail, 0)),
         m_start(std::exchange(other.m_start, 0)),
@@ -48,18 +45,13 @@ public:
   BufferView &operator=(BufferView &&other) = delete;
 
   BufferView(Wrapped<R> *buffer, size_t cap, size_t head, size_t tail,
-             size_t tombstone_cnt, psudb::BloomFilter<R> *filter,
-             ReleaseFunction release)
-      : m_data(buffer), m_release(release), m_head(head), m_tail(tail),
+             size_t tombstone_cnt, psudb::BloomFilter<R> *filter)
+      : m_data(buffer), m_head(head), m_tail(tail),
         m_start(m_head % cap), m_stop(m_tail % cap), m_cap(cap),
         m_approx_ts_cnt(tombstone_cnt), m_tombstone_filter(filter),
         m_active(true) {}
 
-  ~BufferView() {
-    if (m_active) {
-      m_release();
-    }
-  }
+  ~BufferView() = default;
 
   bool check_tombstone(const R &rec) {
     if (m_tombstone_filter && !m_tombstone_filter->lookup(rec))
@@ -138,7 +130,6 @@ public:
 
 private:
   Wrapped<R> *m_data;
-  ReleaseFunction m_release;
   size_t m_head;
   size_t m_tail;
   size_t m_start;

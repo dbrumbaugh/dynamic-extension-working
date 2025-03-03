@@ -2,6 +2,7 @@
  *
  */
 
+#include <cstdlib>
 #define ENABLE_TIMER
 #define TS_TEST
 
@@ -73,9 +74,20 @@ void insert_thread(Ext *extension, std::vector<Rec> *records, size_t start_idx, 
   TIMER_START();
 
   for (size_t i=start_idx; i<stop_idx; i++) {
+    //extension->print_structure();
+
     while (!extension->insert((*records)[i])) {
       usleep(1);
+      //fprintf(stderr, "[D] Failed to insert\n");
     }
+
+    //fprintf(stderr, "[D] Record inserted\n");
+
+    if (extension->get_record_count() != i + 1) {
+      fprintf(stderr, "[E]: invalid record count %ld %ld\n", extension->get_record_count(), i+1);
+      extension->print_structure();
+      exit(EXIT_FAILURE);
+    } 
   }
 
   TIMER_STOP();
@@ -106,10 +118,10 @@ int main(int argc, char **argv) {
       5
   };
 
-  std::vector<size_t> thread_counts = {8, 16, 32};
+  std::vector<size_t> thread_counts = {8};
 
   size_t insert_threads = 1;
-  size_t query_threads = 6;
+  size_t query_threads = 16;
 
   reccnt = n;
 
@@ -119,7 +131,7 @@ int main(int argc, char **argv) {
       auto config = Conf(std::move(policy));
       config.recon_enable_maint_on_flush = true;
       config.recon_maint_disabled = false;
-      config.buffer_flush_trigger = 4000;
+      //config.buffer_flush_trigger = 4000;
       config.maximum_threads = internal_thread_cnt;
 
       g_thrd_cnt = internal_thread_cnt;
@@ -131,7 +143,7 @@ int main(int argc, char **argv) {
       auto extension = new Ext(std::move(config));
 
       /* warmup structure w/ 10% of records */
-      size_t warmup = .1 * n;
+      size_t warmup = 0 * n;
       for (size_t k = 0; k < warmup; k++) {
         while (!extension->insert(data[k])) {
           usleep(1);

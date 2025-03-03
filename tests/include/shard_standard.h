@@ -58,7 +58,7 @@ START_TEST(t_mbuffer_init)
         buffer->append(r);
     }
 
-    Shard* shard = new Shard(buffer->get_buffer_view());
+    Shard* shard = new Shard(buffer->get_buffer_view(buffer->debug_get_head()));
     ck_assert_uint_eq(shard->get_record_count(), 512);
 
     delete buffer;
@@ -73,9 +73,9 @@ START_TEST(t_shard_init)
     auto mbuffer2 = create_test_mbuffer<R>(n);
     auto mbuffer3 = create_test_mbuffer<R>(n);
 
-    auto shard1 = new Shard(mbuffer1->get_buffer_view());
-    auto shard2 = new Shard(mbuffer2->get_buffer_view());
-    auto shard3 = new Shard(mbuffer3->get_buffer_view());
+    auto shard1 = new Shard(mbuffer1->get_buffer_view(mbuffer1->debug_get_head()));
+    auto shard2 = new Shard(mbuffer2->get_buffer_view(mbuffer2->debug_get_head()));
+    auto shard3 = new Shard(mbuffer3->get_buffer_view(mbuffer3->debug_get_head()));
 
     std::vector<const Shard*> shards = {shard1, shard2, shard3};
     auto shard4 = new Shard(shards);
@@ -122,8 +122,8 @@ START_TEST(t_full_cancelation)
     auto buffer = create_double_seq_mbuffer<R>(n, false);
     auto buffer_ts = create_double_seq_mbuffer<R>(n, true);
 
-    Shard* shard = new Shard(buffer->get_buffer_view());
-    Shard* shard_ts = new Shard(buffer_ts->get_buffer_view());
+    Shard* shard = new Shard(buffer->get_buffer_view(buffer->debug_get_head()));
+    Shard* shard_ts = new Shard(buffer_ts->get_buffer_view(buffer_ts->debug_get_head()));
 
     ck_assert_int_eq(shard->get_record_count(), n);
     ck_assert_int_eq(shard->get_tombstone_count(), 0);
@@ -151,10 +151,10 @@ START_TEST(t_point_lookup)
     size_t n = 10000;
 
     auto buffer = create_double_seq_mbuffer<R>(n, false);
-    auto isam = Shard(buffer->get_buffer_view());
+    auto isam = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
 
     {
-        auto view = buffer->get_buffer_view();
+        auto view = buffer->get_buffer_view(buffer->debug_get_head());
 
         for (size_t i=0; i<n; i++) {
             auto rec = view.get(i);
@@ -177,7 +177,7 @@ START_TEST(t_point_lookup_miss)
     size_t n = 10000;
 
     auto buffer = create_double_seq_mbuffer<R>(n, false);
-    auto isam = Shard(buffer->get_buffer_view());
+    auto isam = Shard(buffer->get_buffer_view(buffer->debug_get_head()));
 
     for (uint32_t i=n + 100; i<2*n; i++) {
         R r = R{i, i};
