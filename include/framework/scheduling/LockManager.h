@@ -27,12 +27,13 @@ public:
   void release_lock(size_t idx, size_t version) {
     if (idx < m_lks.size()) {
       assert(m_lks.at(idx).load() == true);
-      m_lks.at(idx).store(false);
 
       while (m_last_unlocked_version.load() < version) {
         auto tmp = m_last_unlocked_version.load();
         m_last_unlocked_version.compare_exchange_strong(tmp, version);
       }
+
+      m_lks.at(idx).store(false);
     }
   }
 
