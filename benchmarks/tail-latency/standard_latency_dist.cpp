@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
-    std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
+    std::vector<size_t> sfs = {2, 3, 4, 5, 6, 7, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
     size_t buffer_size = 8000;
-    std::vector<size_t> policies = {0,};
+    std::vector<size_t> policies = {1};
 
     for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
@@ -70,37 +70,51 @@ int main(int argc, char **argv) {
             while (!extension->insert(data[j])) {
                 usleep(1);
             }
+
+            //fprintf(stderr, "%ld\r", j);
         }
 
         extension->await_version();
+
+        fprintf(stderr, "\n[I] Running Insertion Benchmark\n");
 
         TIMER_INIT();
 
+        TIMER_START();
         for (size_t j=warmup; j<data.size(); j++) {
-            TIMER_START();
             while (!extension->insert(data[j])) {
                 usleep(1);
+                fprintf(stderr, "insert blocked %ld\r", j);
             }
-            TIMER_STOP();
-            fprintf(stdout, "I\t%ld\n", TIMER_RESULT());
         }
+        TIMER_STOP();
+        auto total_insert_lat = TIMER_RESULT();
 
+        fprintf(stderr, "\n[I] Finished running insertion benchmark\n");
         extension->await_version();
+
+        fprintf(stderr, "[I] Running query benchmark\n");
         
         size_t total = 0;
         /* repeat the queries a bunch of times */
+        TIMER_START();
         for (size_t l=0; l<10; l++) {
             for (size_t j=0; j<queries.size(); j++) {
-                TIMER_START();
                 auto q = queries[j];
                 auto res = extension->query(std::move(q));
                 total += res.get();
-                TIMER_STOP();
-                fprintf(stdout, "Q\t%ld\n", TIMER_RESULT());
             }
         }
+        TIMER_STOP();
+        auto total_query_lat = TIMER_RESULT();
+        fprintf(stderr, "[I] Finished running query benchmark\n");
 
+        auto query_latency = total_query_lat  / (10*queries.size());
+        auto insert_throughput =  (size_t) ((double) (n - warmup) / (double) total_insert_lat *1.0e9);
+
+        fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\n", pol, sfs[i], n, insert_throughput, query_latency);
         fprintf(stderr, "%ld\n", total);
+        fflush(stdout);
 
         extension->print_structure();
         delete extension;

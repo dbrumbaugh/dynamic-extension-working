@@ -32,23 +32,23 @@ static size_t g_deleted_records = 0;
 static size_t total = 0;
 
 template<de::ShardInterface S, de::QueryInterface<S> Q>
-std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, size_t buffer_size, int policy=0, size_t reccnt=0) {
+std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, size_t buffer_size, int policy=0, size_t reccnt=0, size_t modifier=0) {
 
     de::ReconstructionPolicy<S, Q> *recon = nullptr;
     
     if (policy == 0) {
-        recon = new de::TieringPolicy<S,Q>(scale_factor, buffer_size);
+        recon = new de::TieringPolicy<S,Q>(scale_factor, buffer_size, modifier);
     } else if (policy == 1) {
-        recon = new de::LevelingPolicy<S, Q>(scale_factor, buffer_size);
+        recon = new de::LevelingPolicy<S, Q>(scale_factor, buffer_size, modifier);
     } else if (policy == 2) {
-        recon = new de::BSMPolicy<S, Q>(buffer_size);
+        recon = new de::BSMPolicy<S, Q>(buffer_size, modifier);
     } else if (policy == 3) {
         recon = new de::FloodL0Policy<S, Q>(buffer_size);
     } else if (policy == 4) {
         assert(reccnt > 0);
         recon = new de::FixedShardCountPolicy<S, Q>(buffer_size, scale_factor, reccnt);
     } else if (policy == 5) {
-        recon = new de::BackgroundTieringPolicy<S, Q>(scale_factor, buffer_size);
+        recon = new de::BackgroundTieringPolicy<S, Q>(scale_factor, buffer_size, modifier);
     }
 
     return std::unique_ptr<de::ReconstructionPolicy<S, Q>>(recon);

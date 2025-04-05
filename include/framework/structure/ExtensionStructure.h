@@ -231,6 +231,9 @@ public:
 
       if (shard_idx != -1) {
         m_levels[shards[i].first]->delete_shard(shard_idx);
+      } else {
+        fprintf(stderr, "ERROR: failed to delete shard %ld\t%p\n", shards[i].first, shards[i].second);
+        //exit(EXIT_FAILURE);
       }
     }
   }

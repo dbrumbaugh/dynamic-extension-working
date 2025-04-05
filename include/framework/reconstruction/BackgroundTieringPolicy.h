@@ -21,8 +21,8 @@ class BackgroundTieringPolicy : public ReconstructionPolicy<ShardType, QueryType
       LevelVector;
 
 public:
-  BackgroundTieringPolicy(size_t scale_factor, size_t buffer_size)
-      : m_scale_factor(scale_factor), m_buffer_size(buffer_size) {}
+  BackgroundTieringPolicy(size_t scale_factor, size_t buffer_size, size_t size_modifier=0)
+      : m_scale_factor(scale_factor), m_buffer_size(buffer_size), m_size_modifier(size_modifier) {}
 
   std::vector<ReconstructionVector> get_reconstruction_tasks(
       const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
@@ -34,7 +34,7 @@ public:
       return {};
     }
 
-    level_index target_level = find_reconstruction_target(levels);
+    level_index target_level = find_reconstruction_target(levels, version->get_structure()->get_record_count());
     assert(target_level != -1);
     level_index source_level = 0;
 
@@ -68,11 +68,11 @@ public:
   }
 
 private:
-  level_index find_reconstruction_target(LevelVector &levels) const {
+  level_index find_reconstruction_target(LevelVector &levels, size_t reccnt) const {
     level_index target_level = invalid_level_idx;
 
     for (level_index i = 1; i < (level_index)levels.size(); i++) {
-      if (levels[i]->get_shard_count() + 1 <= capacity()) {
+      if (levels[i]->get_shard_count() + 1 <= capacity(reccnt)) {
         target_level = i;
         break;
       }
@@ -81,9 +81,10 @@ private:
     return target_level;
   }
 
-  inline size_t capacity() const { return m_scale_factor; }
+  inline size_t capacity(size_t reccnt) const { return m_scale_factor * std::pow(std::log(reccnt), m_size_modifier); }
 
   size_t m_scale_factor;
   size_t m_buffer_size;
+  size_t m_size_modifier;
 };
 } // namespace de

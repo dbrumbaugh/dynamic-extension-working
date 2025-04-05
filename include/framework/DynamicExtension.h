@@ -461,8 +461,8 @@ private:
     auto extension = (DynamicExtension *)args->extension;
     extension->SetThreadAffinity();
 
-    // static std::atomic<size_t> cnt = 0;
-    // size_t recon_id = cnt.fetch_add(1);
+    static std::atomic<size_t> cnt = 0;
+    size_t recon_id = cnt.fetch_add(1);
 
     size_t new_head = 0;
     std::vector<reconstruction_results<ShardType>> reconstructions;
@@ -570,7 +570,7 @@ private:
     args->version->set_structure(std::move(std::unique_ptr<StructureType>(
         active_version->get_structure()->copy())));
 
-    // size_t cur_reccnt = args->version->get_structure()->get_record_count();
+    size_t cur_reccnt = args->version->get_structure()->get_record_count();
 
     /* apply our updates to the copied structure (adding/removing shards) */
     for (auto recon : reconstructions) {
@@ -582,7 +582,7 @@ private:
       }
     }
 
-    // size_t new_reccnt = args->version->get_structure()->get_record_count();
+    size_t new_reccnt = args->version->get_structure()->get_record_count();
 
     // fprintf(stderr, "\t[I] Post-reconstruction L0 Size\t%ld (%ld)\n",
     // args->version->get_structure()->get_level_vector()[0]->get_shard_count(),
@@ -595,9 +595,9 @@ private:
                                 active_version->get_head());
       // fprintf(stderr, "\t[I] Buffer head set to %ld (%ld)\n",
       // active_version->get_head(), recon_id);
-      // if (new_reccnt != cur_reccnt) {
-      //   fprintf(stderr, "ERROR: invalid reccnt (%ld)\n", recon_id);
-      // }
+      if (new_reccnt != cur_reccnt) {
+        fprintf(stderr, "ERROR: invalid reccnt (%ld)\n", recon_id);
+      }
     }
 
     // fprintf(stderr, "\t[I] Record Counts: %ld %ld %ld (%ld)\n", old_reccnt,

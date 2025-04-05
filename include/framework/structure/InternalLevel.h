@@ -102,8 +102,12 @@ public:
     return false;
   }
 
-  const ShardType *get_shard(size_t idx) const {
-    if (idx >= m_shards.size()) {
+  const ShardType *get_shard(ssize_t idx) const {
+    if (idx == all_shards_idx) {
+      idx = 0;
+    }
+
+    if (idx >= (ssize_t) m_shards.size()) {
       return nullptr;
     }
 

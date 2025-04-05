@@ -111,11 +111,9 @@ int main(int argc, char **argv) {
 
   std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {
-      5
-  };
+  std::vector<size_t> policies = { 0, 1, 2};
 
-  std::vector<size_t> thread_counts = {1, 2, 4, 8, 16, 32};
+  std::vector<size_t> thread_counts = {4};
 
   reccnt = n;
 
@@ -148,7 +146,7 @@ int main(int argc, char **argv) {
 
       idx.store(warmup);
 
-      size_t thrd_cnt = 8;
+      size_t thrd_cnt = 1;
       std::thread thrds[thrd_cnt];
 
       for (size_t i=0; i<thrd_cnt; i++) {
