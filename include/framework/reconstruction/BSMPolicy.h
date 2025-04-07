@@ -21,11 +21,13 @@ class BSMPolicy : public ReconstructionPolicy<ShardType, QueryType> {
       LevelVector;
 
 public:
-  BSMPolicy(size_t buffer_size, size_t scale_factor, size_t modifier=0)
-      : m_scale_factor(scale_factor), m_buffer_size(buffer_size), m_size_modifier(modifier) {}
+  BSMPolicy(size_t buffer_size, size_t scale_factor, size_t modifier = 0)
+      : m_scale_factor(scale_factor), m_buffer_size(buffer_size),
+        m_size_modifier(modifier) {}
 
   std::vector<ReconstructionVector>
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
+                           LockManager &lock_mngr) const override {
     return {};
   }
 
@@ -45,23 +47,31 @@ public:
 
     ReconstructionTask task;
     task.target = target_level;
-    task.type = ReconstructionType::Merge;
 
-    std::vector<ShardID> source_shards;
-    size_t reccnt = 0;
-
-    source_shards.push_back({0, all_shards_idx});
-
-    for (level_index i = target_level; i > source_level; i--) {
-      if (i < (level_index)levels.size()) {
-        source_shards.push_back({i-1, all_shards_idx});
-        reccnt += levels[i-1]->get_record_count();
-      }
+    if (target_level == 1 &&
+        (levels.size() == 1 || levels[1]->get_record_count() == 0)) {
+      /* if the first level is empty, then we just append the buffer to it */
+      task.type = ReconstructionType::Append;
+    } else {
+      /* otherwise, we'll need to do a merge of at least two shards */
+      task.type = ReconstructionType::Merge;
     }
 
-    assert(source_shards.size() > 0);
+    size_t reccnt = 0;
+    if (target_level < (ssize_t)levels.size() && levels[target_level]->get_record_count() > 0) {
+      task.sources.push_back({target_level, all_shards_idx});
+    }
 
-    reconstructions.add_reconstruction(source_shards, target_level, reccnt, ReconstructionType::Merge);
+    for (level_index i = target_level - 1; i >= source_level; i--) {
+      assert(i < (ssize_t)levels.size());
+      task.sources.push_back({i, all_shards_idx});
+      reccnt += levels[i]->get_record_count();
+    }
+
+    task.reccnt = reccnt;
+    assert(task.sources.size() > 0);
+    reconstructions.add_reconstruction(task);
+
     return reconstructions;
   }
 

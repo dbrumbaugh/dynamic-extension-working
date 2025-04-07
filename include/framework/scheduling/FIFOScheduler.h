@@ -61,6 +61,7 @@ public:
     m_stats.job_queued(ts, type, size);
     m_task_queue.push(Task(size, ts, job, args, type, &m_stats, nullptr, &m_cv));
 
+
     m_cv.notify_all();
   }
 
@@ -107,8 +108,8 @@ private:
   }
 
   void run() {
+    std::unique_lock<std::mutex> cv_lock(m_cv_lock);
     do {
-      std::unique_lock<std::mutex> cv_lock(m_cv_lock);
       m_cv.wait(cv_lock);
 
       while (m_task_queue.size() > 0 && m_thrd_pool.n_idle() > 0) {

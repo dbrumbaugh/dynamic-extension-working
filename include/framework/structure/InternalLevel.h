@@ -217,17 +217,11 @@ public:
     m_shards.push_back(shard);
   }
 
-  const ShardType *get_shard(ShardID shid) const {
-    if (shid < m_shards.size()) {
-      return m_shards[shid].first.get();
-    }
-
-    return nullptr;
-  }
-
-  const shard_ptr get_shard_ptr(size_t shid) const {
-    if (shid < m_shards.size()) {
-      return m_shards[shid];
+  const shard_ptr get_shard_ptr(ssize_t idx) const {
+    if (idx >= 0 && idx < (ssize_t) m_shards.size()) {
+      return m_shards[idx];
+    } else if (idx == all_shards_idx && m_shards.size() == 1) {
+      return m_shards[0];
     }
 
     return {nullptr, 0};

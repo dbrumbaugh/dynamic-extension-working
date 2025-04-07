@@ -122,9 +122,9 @@ public:
                           size_t reccnt, ReconstructionType type) {
 
     if (type == ReconstructionType::Merge) {
-      m_tasks.push_back({{{source, all_shards_idx}, {target, all_shards_idx}}, target, reccnt});
+      m_tasks.push_back({{{source, all_shards_idx}, {target, all_shards_idx}}, target, reccnt, type});
     } else {
-      m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt});
+      m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt, type});
     }
 
     total_reccnt += reccnt;

@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
     std::vector<size_t> sfs = {2, 3, 4, 5, 6, 7, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
     size_t buffer_size = 8000;
-    std::vector<size_t> policies = {1};
+    std::vector<size_t> policies = {0, 1, 2};
 
     for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
         config.recon_enable_maint_on_flush = false;
         config.recon_maint_disabled = true;
         config.buffer_flush_trigger = 4000;
+        config.maximum_threads = 8;
         
         auto extension = new Ext(std::move(config));
 
@@ -70,13 +71,11 @@ int main(int argc, char **argv) {
             while (!extension->insert(data[j])) {
                 usleep(1);
             }
-
-            //fprintf(stderr, "%ld\r", j);
         }
 
         extension->await_version();
 
-        fprintf(stderr, "\n[I] Running Insertion Benchmark\n");
+        // fprintf(stderr, "\n[I] Running Insertion Benchmark\n");
 
         TIMER_INIT();
 
@@ -90,10 +89,13 @@ int main(int argc, char **argv) {
         TIMER_STOP();
         auto total_insert_lat = TIMER_RESULT();
 
-        fprintf(stderr, "\n[I] Finished running insertion benchmark\n");
+        // extension->print_structure();
+        // fflush(stdout);
+
+        // fprintf(stderr, "\n[I] Finished running insertion benchmark\n");
         extension->await_version();
 
-        fprintf(stderr, "[I] Running query benchmark\n");
+        // fprintf(stderr, "[I] Running query benchmark\n");
         
         size_t total = 0;
         /* repeat the queries a bunch of times */
@@ -107,7 +109,7 @@ int main(int argc, char **argv) {
         }
         TIMER_STOP();
         auto total_query_lat = TIMER_RESULT();
-        fprintf(stderr, "[I] Finished running query benchmark\n");
+        // fprintf(stderr, "[I] Finished running query benchmark\n");
 
         auto query_latency = total_query_lat  / (10*queries.size());
         auto insert_throughput =  (size_t) ((double) (n - warmup) / (double) total_insert_lat *1.0e9);
@@ -116,7 +118,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "%ld\n", total);
         fflush(stdout);
 
-        extension->print_structure();
+        // extension->print_structure();
         delete extension;
     }
     }

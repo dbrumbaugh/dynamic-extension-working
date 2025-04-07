@@ -170,8 +170,23 @@ public:
   inline reconstruction_results<ShardType> perform_reconstruction(ReconstructionTask task) const { 
     reconstruction_results<ShardType> result;
     result.target_level = task.target;
-    
-    std::vector<const ShardType *> shards;
+
+    /* if there is only one source, then we don't need to actually rebuild */
+    if (task.sources.size() == 1) {
+      auto shid = task.sources[0];
+      if (shid.shard_idx == all_shards_idx && m_levels[shid.level_idx]->get_shard_count() > 1) {
+        /* there's more than one shard, so we need to do the reconstruction */
+      } else {
+        auto raw_shard_ptr = m_levels[shid.level_idx]->get_shard(shid.shard_idx);
+        assert(raw_shard_ptr);
+        result.source_shards.emplace_back(shid.level_idx, raw_shard_ptr);
+        result.new_shard = m_levels[shid.level_idx]->get_shard_ptr(shid.shard_idx).first;
+
+        return result;
+      }
+    }
+        
+    std::vector<const ShardType*> shards;
     for (ShardID shid : task.sources) {
       assert(shid.level_idx < (level_index) m_levels.size());
       assert(shid.shard_idx >= -1);
@@ -233,7 +248,7 @@ public:
         m_levels[shards[i].first]->delete_shard(shard_idx);
       } else {
         fprintf(stderr, "ERROR: failed to delete shard %ld\t%p\n", shards[i].first, shards[i].second);
-        //exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
       }
     }
   }
