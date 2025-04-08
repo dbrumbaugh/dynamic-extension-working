@@ -41,7 +41,7 @@ std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, 
     } else if (policy == 1) {
         recon = new de::LevelingPolicy<S, Q>(scale_factor, buffer_size, modifier);
     } else if (policy == 2) {
-        recon = new de::BSMPolicy<S, Q>(buffer_size, modifier);
+        recon = new de::BSMPolicy<S, Q>(buffer_size, scale_factor, modifier);
     } else if (policy == 3) {
         recon = new de::FloodL0Policy<S, Q>(buffer_size);
     } else if (policy == 4) {

@@ -103,10 +103,10 @@ int main(int argc, char **argv) {
 
   std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {1, 2, 0};
+  std::vector<size_t> policies = {2};
 
   std::vector<size_t> thread_counts = {8};
-  std::vector<size_t> modifiers = {0, 1, 2, 3};
+  std::vector<size_t> modifiers = {0};
   std::vector<size_t> scale_factors = {2, 3, 4, 5, 6, 7, 8};
 
   size_t insert_threads = 1;
@@ -178,7 +178,8 @@ int main(int argc, char **argv) {
           size_t query_lat = (double)total_query_time.load() /
                              (double)total_query_count.load();
 
-          fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf, mod,
+          fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
+                  mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
           fflush(stdout);
 
