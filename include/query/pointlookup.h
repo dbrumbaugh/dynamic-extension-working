@@ -41,7 +41,7 @@ public:
   typedef std::vector<Wrapped<R>> LocalResultType;
   typedef std::vector<R> ResultType;
     
-  constexpr static bool EARLY_ABORT = true;
+  constexpr static bool EARLY_ABORT = false;
   constexpr static bool SKIP_DELETE_FILTER = true;
 
   static LocalQuery *local_preproc(S *shard, Parameters *parms) {

@@ -14,8 +14,8 @@
 #include "framework/scheduling/FIFOScheduler.h"
 #include "framework/scheduling/SerialScheduler.h"
 #include "framework/util/Configuration.h"
-#include "query/rangecount.h"
-#include "shard/TrieSpline.h"
+#include "query/pointlookup.h"
+#include "shard/ISAMTree.h"
 #include "standard_benchmarks.h"
 #include "util/types.h"
 
@@ -26,8 +26,8 @@
 #include "psu-util/timer.h"
 
 typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::TrieSpline<Rec> Shard;
-typedef de::rc::Query<Shard> Q;
+typedef de::ISAMTree<Rec> Shard;
+typedef de::pl::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
                              de::FIFOScheduler>
     Ext;
@@ -64,7 +64,7 @@ void query_thread(Ext *extension, std::vector<QP> *queries) {
     TIMER_STOP();
 
     total_query_time.fetch_add(TIMER_RESULT());
-    total_res.fetch_add(res);
+    total_res.fetch_add(res.size());
   }
 }
 
@@ -99,15 +99,16 @@ int main(int argc, char **argv) {
   std::string q_fname = std::string(argv[3]);
 
   auto data = read_sosd_file<Rec>(d_fname, n);
-  auto queries = read_range_queries<QP>(q_fname, .0001);
+  //auto queries = read_range_queries<QP>(q_fname, .0001);
+  auto queries =read_sosd_point_lookups<QP>(q_fname, 100);
 
   std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {2};
+  std::vector<size_t> policies = {0, 1, 2};
 
   std::vector<size_t> thread_counts = {8};
   std::vector<size_t> modifiers = {0};
-  std::vector<size_t> scale_factors = {2, 3, 4, 5, 6, 7, 8};
+  std::vector<size_t> scale_factors = {2, 4, 8, 16, 32, 64, 128, 256};
 
   size_t insert_threads = 1;
   size_t query_threads = 1;

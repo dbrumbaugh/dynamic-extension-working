@@ -10,6 +10,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "psu-util/progress.h"
@@ -73,11 +74,36 @@ static std::vector<QP> read_range_queries(std::string &fname,
   while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF) {
     if (start < stop && std::abs(sel - selectivity) < 0.00001) {
       QP q;
+
       q.lower_bound = start;
       q.upper_bound = stop;
 
       queries.push_back(q);
     }
+  }
+  fclose(qf);
+
+  return queries;
+}
+
+template <typename QP>
+static std::vector<QP> read_sosd_point_lookups(std::string &fname, size_t n) {
+  std::vector<QP> queries;
+
+  FILE *qf = fopen(fname.c_str(), "r");
+
+  if (!qf) {
+    fprintf(stderr, "ERROR: Failed to open file %s\n", fname.c_str());
+    exit(EXIT_FAILURE);
+  }
+
+  size_t start, stop;
+  double sel;
+  while (fscanf(qf, "%zu%zu%lf\n", &start, &stop, &sel) != EOF && queries.size() < n) {
+    QP q;
+
+    q.search_key= start;
+    queries.push_back(q);
   }
   fclose(qf);
 
