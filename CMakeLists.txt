@@ -323,6 +323,16 @@ if (tail_bench)
     target_include_directories(insert_query_threads PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(insert_query_threads PUBLIC -mcx16)
 
+    add_executable(query_detail ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/query_detail.cpp)
+    target_link_libraries(query_detail PUBLIC gsl pthread atomic)
+    target_include_directories(query_detail PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(query_detail PUBLIC -mcx16)
+
+    add_executable(query_parm_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/query_parm_sweep.cpp)
+    target_link_libraries(query_parm_sweep PUBLIC gsl pthread atomic)
+    target_include_directories(query_parm_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(query_parm_sweep PUBLIC -mcx16)
+
 endif()
 
 if (bench) 
@@ -381,5 +391,6 @@ if (bench)
     target_link_libraries(insert_tail_latency PUBLIC gsl pthread atomic)
     target_include_directories(insert_tail_latency PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(insert_tail_latency PUBLIC -mcx16)
+
 
 endif()
