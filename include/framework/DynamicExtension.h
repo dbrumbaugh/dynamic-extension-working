@@ -66,22 +66,9 @@ public:
    * Create a new Dynamized version of a data structure, supporting
    * inserts and, possibly, deletes. The following parameters are used
    * for configuration of the structure,
-   * @param buffer_low_watermark The number of records that can be
-   *        inserted before a buffer flush is initiated
-   *
-   * @param buffer_high_watermark The maximum buffer capacity, inserts
-   *        will begin to fail once this number is reached, until the
-   *        buffer flush has completed. Has no effect in single-threaded
-   *        operation
-   *
-   * @param scale_factor The rate at which the capacity of levels
-   *        grows; should be at least 2 for reasonable performance
-   *
-   * @param memory_budget Unused at this time
-   *
-   * @param thread_cnt The maximum number of threads available to the
-   *        framework's scheduler for use in answering queries and
-   *        performing compactions and flushes, etc.
+   * @param config A configuration object detailing the requested values
+   *        for various configuration parameters in the system. See
+   *        include/framework/util/Configuration.h for details.
    */
   DynamicExtension(ConfType &&config) : m_config(std::move(config)) {
     m_buffer = std::make_unique<BufferType>(m_config.buffer_flush_trigger,
@@ -115,14 +102,21 @@ public:
   /**
    *  Inserts a record into the index. Returns 1 if the insert succeeds,
    *  and 0 if it fails. Inserts may fail if the DynamicExtension's buffer
-   *  has reached the high water mark; in this case, the insert should be
-   *  retried when the buffer has flushed. The record will be immediately
-   *  visible inside the index upon the return of this function.
+   *  has reached the high water mark, or if rate limiting is triggered;
+   *  in either case, the insert should be retried after a brief pause.
+   *  The record will be immediately visible inside the index upon the
+   *  successful return of this function.
    *
    *  @param rec The record to be inserted
    *
-   *  @return 1 on success, 0 on failure (in which case the insert should
-   *          be retried)
+   *  @param rng An optional random number generator for use with insertion
+   *         rate limiting. Can be left as nullptr if the feature is not
+   *         desired.
+   *
+   *  @return 1 on success, 0 on failure. A failure can occur if either
+   *          the buffer is full and is in the process of flushing, or if
+   *          the insertion is rejected by the rate limiter. In either
+   *          case, the insert should be retried after a brief pause.
    */
   int insert(const RecordType &rec, gsl_rng *rng = nullptr) {
     return internal_append(rec, false, rng);
@@ -149,12 +143,15 @@ public:
    *  @return 1 on success, and 0 on failure. For tombstone deletes, a
    *          failure will occur if the insert fails due to the buffer
    *          being full, and can be retried. For tagging deletes, a
-   *          failure means that hte record to be deleted could not be
+   *          failure means that the record to be deleted could not be
    *          found in the index, and should *not* be retried.
    */
   int erase(const RecordType &rec) {
     // FIXME: delete tagging will require a lot of extra work to get
     //        operating "correctly" in a concurrent environment.
+
+    // FIXME: should integrate with the rate limiter for tombstone
+    //        deletes.
 
     /*
      * Get a view on the buffer *first*. This will ensure a stronger
@@ -332,9 +329,15 @@ public:
     return flattened;
   }
 
-  /*
+  /**
    * Blocks until the specified version id becomes active. If no version
    * id is provided, wait for the newest pending version to be installed.
+   *
+   * @param vid The version id to wait for. This function will block until
+   *        the active version is greater than or equal to vid. If no
+   *        vid is provided, then the function will block until the
+   *        largest in-flight version number at the time of the function
+   *        call is made active.
    *
    * NOTE: this method will return once the specified version has been
    *       installed, but does not guarantee that the specified version
