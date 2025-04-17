@@ -32,7 +32,7 @@ static size_t g_deleted_records = 0;
 static size_t total = 0;
 
 template<de::ShardInterface S, de::QueryInterface<S> Q>
-std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, size_t buffer_size, int policy=0, size_t reccnt=0, size_t modifier=0) {
+std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, size_t buffer_size, int policy=0, size_t reccnt=0, double modifier=0) {
 
     de::ReconstructionPolicy<S, Q> *recon = nullptr;
     

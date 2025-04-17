@@ -29,11 +29,11 @@ typedef de::Record<uint64_t, uint64_t> Rec;
 typedef de::ISAMTree<Rec> Shard;
 typedef de::pl::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
-                             de::FIFOScheduler>
+                             de::SerialScheduler>
     Ext;
 typedef Q::Parameters QP;
 typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE,
-                            de::FIFOScheduler>
+                            de::SerialScheduler>
     Conf;
 
 std::atomic<size_t> idx;
@@ -102,13 +102,12 @@ int main(int argc, char **argv) {
   //auto queries = read_range_queries<QP>(q_fname, .0001);
   auto queries =read_sosd_point_lookups<QP>(q_fname, 100);
 
-  std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
   std::vector<size_t> policies = {0, 1, 2};
 
   std::vector<size_t> thread_counts = {8};
-  std::vector<size_t> modifiers = {0};
-  std::vector<size_t> scale_factors = {2, 4, 8, 16, 32, 64, 128, 256};
+  std::vector<double> modifiers = {0, .3, .5, .8};
+  std::vector<size_t> scale_factors = {2, 4, 8};
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -185,7 +184,7 @@ int main(int argc, char **argv) {
           size_t query_lat = (double)total_query_time.load() /
                              (double)total_query_count.load();
 
-          fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
+          fprintf(stdout, "%ld\t%ld\t%ld\t%lf\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
                   mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
           fflush(stdout);

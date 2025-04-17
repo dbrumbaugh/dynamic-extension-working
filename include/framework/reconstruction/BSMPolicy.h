@@ -21,7 +21,7 @@ class BSMPolicy : public ReconstructionPolicy<ShardType, QueryType> {
       LevelVector;
 
 public:
-  BSMPolicy(size_t buffer_size, size_t scale_factor, size_t modifier = 0)
+  BSMPolicy(size_t buffer_size, size_t scale_factor, double modifier = 0)
       : m_scale_factor(scale_factor), m_buffer_size(buffer_size),
         m_size_modifier(modifier) {}
 
@@ -85,12 +85,12 @@ private:
   }
 
   inline size_t capacity(level_index level, size_t reccnt) const {
-    size_t base = m_scale_factor * pow(log(reccnt), m_size_modifier);
+    double base = std::ceil(m_scale_factor * std::pow<double>(std::log10(reccnt), m_size_modifier));
     return m_buffer_size * (base - 1) * pow(base, level + 1);
   }
 
   size_t m_scale_factor;
   size_t m_buffer_size;
-  size_t m_size_modifier;
+  double m_size_modifier;
 };
 } // namespace de
