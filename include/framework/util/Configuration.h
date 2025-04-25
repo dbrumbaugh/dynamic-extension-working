@@ -44,6 +44,8 @@ class DEConfiguration {
     size_t minimum_query_threads = 4;
     size_t maximum_memory_usage = 0; /* o for unbounded */
 
+    size_t physical_core_count = 6;
+
     size_t buffer_flush_query_preemption_trigger = UINT64_MAX;
 
 };

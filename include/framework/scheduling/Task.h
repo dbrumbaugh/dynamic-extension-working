@@ -72,7 +72,6 @@ struct Task {
   }
 
   void operator()(size_t thrd_id) {
-    auto start = std::chrono::high_resolution_clock::now();
     if (m_stats) {
       m_stats->job_begin(m_timestamp);
     }
@@ -81,14 +80,6 @@ struct Task {
 
     if (m_stats) {
       m_stats->job_complete(m_timestamp);
-    }
-    auto stop = std::chrono::high_resolution_clock::now();
-
-    if (m_stats) {
-      auto time =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start)
-              .count();
-      m_stats->log_time_data(time, m_type);
     }
 
     if (m_lk) {

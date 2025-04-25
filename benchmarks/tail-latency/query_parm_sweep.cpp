@@ -29,11 +29,11 @@ typedef de::Record<uint64_t, uint64_t> Rec;
 typedef de::ISAMTree<Rec> Shard;
 typedef de::pl::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
-                             de::SerialScheduler>
+                             de::FIFOScheduler>
     Ext;
 typedef Q::Parameters QP;
 typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE,
-                            de::SerialScheduler>
+                            de::FIFOScheduler>
     Conf;
 
 std::atomic<size_t> idx;
@@ -103,11 +103,11 @@ int main(int argc, char **argv) {
   auto queries =read_sosd_point_lookups<QP>(q_fname, 100);
 
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {0, 1, 2};
+  std::vector<size_t> policies = {0};
 
   std::vector<size_t> thread_counts = {8};
-  std::vector<double> modifiers = {0, .3, .5, .8};
-  std::vector<size_t> scale_factors = {2, 4, 8};
+  std::vector<double> modifiers = {0};
+  std::vector<size_t> scale_factors = {8, 8, 8, 8, 8}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -165,11 +165,19 @@ int main(int argc, char **argv) {
 
           extension->await_version();
 
+          /* run some queries to "warm up" the cache */
+          for (size_t i=0; i<queries.size()*2; i++) {
+            auto q_idx = i % queries.size();
+            auto q = queries[q_idx];
+            auto res = extension->query(std::move(q)).get();
+            total_res.fetch_add(res.size());
+          }
+
           total_query_count.store(50000);
           TIMER_INIT();
           TIMER_START();
           for (size_t i=0; i<total_query_count; i++) {
-            auto q_idx = rand() % queries.size();
+            auto q_idx = i % queries.size();
             auto q = queries[q_idx];
             auto res = extension->query(std::move(q)).get();
             total_res.fetch_add(res.size());
@@ -187,6 +195,7 @@ int main(int argc, char **argv) {
           fprintf(stdout, "%ld\t%ld\t%ld\t%lf\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
                   mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
+          extension->print_scheduler_statistics();
           fflush(stdout);
 
           total_res.store(0);

@@ -14,6 +14,7 @@
 
 #include "framework/scheduling/Task.h"
 #include "framework/scheduling/statistics.h"
+#include <bits/chrono.h>
 #include <chrono>
 #include <condition_variable>
 #include <thread>
@@ -60,7 +61,6 @@ public:
     std::unique_lock<std::mutex> lk(m_cv_lock);
     m_stats.job_queued(ts, type, size);
     m_task_queue.push(Task(size, ts, job, args, type, &m_stats, nullptr, &m_cv));
-
 
     m_cv.notify_all();
   }

@@ -471,7 +471,7 @@ private:
   static void reconstruction(void *arguments) {
     auto args = (ReconstructionArgs<ShardType, QueryType> *)arguments;
     auto extension = (DynamicExtension *)args->extension;
-    extension->SetThreadAffinity();
+    extension->set_thread_affinity();
 
     static std::atomic<size_t> cnt = 0;
     size_t recon_id = cnt.fetch_add(1);
@@ -661,6 +661,7 @@ private:
 
   static void async_query(void *arguments) {
     auto *args = (QueryArgs<ShardType, QueryType, DynamicExtension> *)arguments;
+    args->extension->set_thread_affinity();
 
     auto version = args->extension->get_active_version();
 
@@ -927,13 +928,12 @@ private:
   }
 
 //#ifdef _GNU_SOURCE
-#if 0
-  void SetThreadAffinity() {
+  void set_thread_affinity() {
     if constexpr (std::same_as<SchedType, SerialScheduler>) {
       return;
     }
 
-    int core = m_next_core.fetch_add(1) % m_core_cnt;
+    int core = m_next_core.fetch_add(1) % m_config.physical_core_count;
     cpu_set_t mask;
     CPU_ZERO(&mask);
 
@@ -954,8 +954,10 @@ private:
     CPU_SET(core, &mask);
     ::sched_setaffinity(0, sizeof(mask), &mask);
   }
+  /*
 #else
-  void SetThreadAffinity() {}
+  void set_thread_affinity() {}
 #endif
+*/
 };
 } // namespace de

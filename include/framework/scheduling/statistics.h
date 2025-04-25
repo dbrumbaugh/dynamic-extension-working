@@ -30,25 +30,44 @@ private:
   struct Event {
     size_t id;
     EventType type;
+    std::chrono::system_clock::time_point time;
+
+    Event(size_t id, EventType type)
+        : id(id), type(type), time(std::chrono::high_resolution_clock::now()) {}
   };
 
   struct JobInfo {
     size_t id;
     size_t size;
     size_t type;
+
+    JobInfo(size_t id, size_t size, size_t type) : id(id), size(size), type(type) {}
   };
 
 public:
   SchedulerStatistics() = default;
   ~SchedulerStatistics() = default;
 
-  void job_queued(size_t id, size_t type, size_t size) { }
+  void job_queued(size_t id, size_t type, size_t size) {
+    std::unique_lock<std::mutex> lk(m_mutex);
+    m_jobs.insert({id, {id, size, type}});
+    m_event_log.emplace_back(id, EventType::QUEUED);
+  }
 
-  void job_scheduled(size_t id) { std::unique_lock<std::mutex> lk(m_mutex); }
+  void job_scheduled(size_t id) {
+    std::unique_lock<std::mutex> lk(m_mutex);
+    m_event_log.emplace_back(id, EventType::SCHEDULED);
+  }
 
-  void job_begin(size_t id) {}
+  void job_begin(size_t id) {
+    std::unique_lock<std::mutex> lk(m_mutex);
+    m_event_log.emplace_back(id, EventType::STARTED);
+  }
 
-  void job_complete(size_t id) {}
+  void job_complete(size_t id) {
+    std::unique_lock<std::mutex> lk(m_mutex);
+    m_event_log.emplace_back(id, EventType::FINISHED);
+  }
 
   /* FIXME: This is just a temporary approach */
   void log_time_data(size_t length, size_t type) {
@@ -72,21 +91,90 @@ public:
   }
 
   void print_statistics() {
-    if (m_type_1_cnt > 0) {
-      fprintf(
-          stdout,
-          "Query Count: %ld\tQuery Avg. Latency: %ld\tMax Query Latency: %ld\n",
-          m_type_1_cnt.load(), m_type_1_total_time.load() / m_type_1_cnt.load(),
-          m_type_1_largest_time.load());
+    int64_t total_queue_time = 0;
+    int64_t max_queue_time = 0;
+    int64_t min_queue_time = INT64_MAX;
+
+    int64_t total_runtime = 0;
+    int64_t max_runtime = 0;
+    int64_t min_runtime = INT64_MAX;
+
+    int64_t query_cnt = 0;
+
+    /* dumb brute force approach; there are a million better ways to do this */
+    size_t i = 0;
+    for (auto &job : m_jobs) {
+      std::chrono::system_clock::time_point queue_time;
+      std::chrono::system_clock::time_point schedule_time;
+      std::chrono::system_clock::time_point start_time;
+      std::chrono::system_clock::time_point stop_time;
+
+      /* just look at queries for now */
+      if (job.second.type == 1) {
+        for (auto &event : m_event_log) {
+          if (event.id == job.first) {
+            switch (event.type) {
+              case EventType::QUEUED:
+                queue_time = event.time;
+                i++;
+                break;
+              case EventType::FINISHED:
+                stop_time = event.time;
+                i++;
+                break;
+              case EventType::SCHEDULED:
+                schedule_time = event.time;
+                i++;
+                break;
+              case EventType::STARTED:
+                start_time = event.time;
+                i++;
+                break;
+            }
+          }
+        }
+      }
+      /* event wasn't fully logged, so we'll skip it */
+      if (i != 4) {
+        i=0;
+        continue;
+      }
+      i=0;
+
+      auto time_in_queue = std::chrono::duration_cast<std::chrono::nanoseconds>(schedule_time - queue_time).count();
+      auto runtime =  std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+
+      total_queue_time += time_in_queue;
+      total_runtime += runtime;
+
+      if (time_in_queue > max_queue_time) {
+        max_queue_time = time_in_queue;
+      }
+
+      if (time_in_queue < min_queue_time) {
+        min_queue_time = time_in_queue;
+      }
+
+      if (runtime > max_runtime) {
+        max_runtime = runtime;
+      }
+
+      if (runtime < min_runtime) {
+        min_runtime = runtime;
+      }
+
+      query_cnt++;
     }
-    if (m_type_2_cnt > 0) {
-      fprintf(stdout,
-              "Reconstruction Count: %ld\tReconstruction Avg. Latency: "
-              "%ld\tMax Recon. Latency:%ld\n",
-              m_type_2_cnt.load(),
-              m_type_2_total_time.load() / m_type_2_cnt.load(),
-              m_type_2_largest_time.load());
+
+    if (query_cnt == 0) {
+      return;
     }
+
+    int64_t average_queue_time = total_queue_time / query_cnt;
+    int64_t average_runtime = total_runtime / query_cnt;
+
+    fprintf(stdout, "Average Query Scheduling Delay: %ld\t Min Scheduling Delay: %ld\t Max Scheduling Delay: %ld\n", average_queue_time, min_queue_time, max_queue_time);
+    fprintf(stdout, "Average Query Latency: %ld\t\t Min Query Latency: %ld\t Max Query Latency: %ld\n", average_runtime, min_runtime, max_runtime);
   }
 
 private:
