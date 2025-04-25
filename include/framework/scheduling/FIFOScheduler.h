@@ -72,6 +72,7 @@ public:
   }
 
   void print_statistics() { m_stats.print_statistics(); }
+  void print_query_time_data() { m_stats.print_query_time_data(); }
 
 private:
   psudb::LockedPriorityQueue<Task> m_task_queue;

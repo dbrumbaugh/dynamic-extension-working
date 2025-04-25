@@ -383,6 +383,8 @@ public:
    */
   void print_scheduler_statistics() const { m_sched->print_statistics(); }
 
+  void print_scheduler_query_data() const { m_sched->print_query_time_data(); }
+
   /**
    * Writes a schematic view of the currently active structure to
    * stdout. Each level is on its own line, and each shard is represented.
