@@ -16,6 +16,7 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <mutex>
 #include <unordered_map>
@@ -113,11 +114,18 @@ public:
 
     int64_t query_cnt = 0;
 
+    size_t worst_query = 0;
+    size_t first_query = UINT64_MAX;
+
 
     /* hard-coded for the moment to only consider queries */
     for (auto &job : m_jobs) {
       if (job.second.type != 1) {
         continue;
+      }
+
+      if (job.first < first_query) {
+        first_query = job.first;
       }
 
       total_queue_time += job.second.time_in_queue();
@@ -133,6 +141,7 @@ public:
 
       if (job.second.runtime() > max_runtime) {
         max_runtime = job.second.runtime();
+        worst_query = job.first;
       }
 
       if (job.second.runtime() < min_runtime) {
@@ -163,7 +172,7 @@ public:
     int64_t runtime_stddev = std::sqrt(runtime_deviation_sum / query_cnt);
     
 
-    fprintf(stdout, "Query Count: %ld\n", query_cnt);
+    fprintf(stdout, "Query Count: %ld\tWorst Query: %ld\tFirst Query: %ld\n", query_cnt, worst_query, first_query);
     fprintf(stdout, "Average Query Scheduling Delay: %ld\t Min Scheduling Delay: %ld\t Max Scheduling Delay: %ld\tStandard Deviation: %ld\n", average_queue_time, min_queue_time, max_queue_time, queue_stddev);
     fprintf(stdout, "Average Query Latency: %ld\t\t Min Query Latency: %ld\t Max Query Latency: %ld\tStandard Deviation: %ld\n", average_runtime, min_runtime, max_runtime, runtime_stddev);
   }

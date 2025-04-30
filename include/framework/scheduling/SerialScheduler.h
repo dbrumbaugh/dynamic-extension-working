@@ -40,6 +40,7 @@ public:
   void shutdown() { /* intentionally left blank */ }
 
   void print_statistics() { m_stats.print_statistics(); }
+  void print_query_time_data() { m_stats.print_query_time_data(); }
 
 private:
   [[maybe_unused]] size_t m_memory_budget;

@@ -2,6 +2,7 @@
  *
  */
 
+#include "benchmark_types.h"
 #include <cstdlib>
 #define ENABLE_TIMER
 #define TS_TEST
@@ -14,8 +15,8 @@
 #include "framework/scheduling/FIFOScheduler.h"
 #include "framework/scheduling/SerialScheduler.h"
 #include "framework/util/Configuration.h"
-#include "query/pointlookup.h"
-#include "shard/ISAMTree.h"
+#include "query/knn.h"
+#include "shard/VPTree.h"
 #include "standard_benchmarks.h"
 #include "util/types.h"
 
@@ -25,9 +26,10 @@
 
 #include "psu-util/timer.h"
 
-typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::ISAMTree<Rec> Shard;
-typedef de::pl::Query<Shard> Q;
+
+typedef Word2VecRec Rec;
+typedef de::VPTree<Rec> Shard;
+typedef de::knn::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
                              de::SerialScheduler>
     Ext;
@@ -98,16 +100,19 @@ int main(int argc, char **argv) {
   std::string d_fname = std::string(argv[2]);
   std::string q_fname = std::string(argv[3]);
 
-  auto data = read_sosd_file<Rec>(d_fname, n);
+  //auto data = read_sosd_file<Rec>(d_fname, n);
   //auto queries = read_range_queries<QP>(q_fname, .0001);
-  auto queries =read_sosd_point_lookups<QP>(q_fname, 1);
+  //auto queries =read_sosd_point_lookups<QP>(q_fname, 1);
+
+  auto data = read_vector_file<Rec, W2V_SIZE>(d_fname, n);
+  auto queries = read_knn_queries<QP>(q_fname, 15, 1);
 
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {1};
+  std::vector<size_t> policies = {0};
 
   std::vector<size_t> thread_counts = {8};
   std::vector<double> modifiers = {0};
-  std::vector<size_t> scale_factors = {4, 4, 4, 4}; 
+  std::vector<size_t> scale_factors = {2, 4, 6, 8, 10}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -196,7 +201,7 @@ int main(int argc, char **argv) {
                   mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
           extension->print_scheduler_statistics();
-          extension->print_scheduler_query_data();
+          //extension->print_scheduler_query_data();
           //extension->print_structure();
           fflush(stdout);
 

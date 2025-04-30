@@ -333,6 +333,11 @@ if (tail_bench)
     target_include_directories(query_parm_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(query_parm_sweep PUBLIC -mcx16)
 
+    add_executable(knn_query_parm_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/knn_query_parm_sweep.cpp)
+    target_link_libraries(knn_query_parm_sweep PUBLIC gsl pthread atomic)
+    target_include_directories(knn_query_parm_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(knn_query_parm_sweep PUBLIC -mcx16)
+
 endif()
 
 if (bench) 

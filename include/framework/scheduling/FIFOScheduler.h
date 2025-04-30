@@ -36,6 +36,7 @@ public:
         m_thrd_cnt((thread_cnt) ? thread_cnt : DEFAULT_MAX_THREADS),
         m_used_memory(0), m_used_thrds(0), m_shutdown(false) {
     m_sched_thrd = std::thread(&FIFOScheduler::run, this);
+    m_counter.store(0);
     m_thrd_pool.resize(m_thrd_cnt);
   }
 

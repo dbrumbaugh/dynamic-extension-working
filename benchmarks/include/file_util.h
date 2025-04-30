@@ -149,7 +149,7 @@ static std::vector<QP> read_binary_knn_queries(std::string fname, size_t k,
 }
 
 template <typename QP>
-static std::vector<QP> read_knn_queries(std::string fname, size_t k) {
+static std::vector<QP> read_knn_queries(std::string fname, size_t k, size_t n=0) {
   std::vector<QP> queries;
 
   FILE *qf = fopen(fname.c_str(), "r");
@@ -173,6 +173,10 @@ static std::vector<QP> read_knn_queries(std::string fname, size_t k) {
 
     query.k = k;
     queries.emplace_back(query);
+
+    if (n != 0 && queries.size() == n) {
+      break;
+    }
   }
 
   free(line);
