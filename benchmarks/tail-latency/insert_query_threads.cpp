@@ -70,17 +70,20 @@ void query_thread(Ext *extension, std::vector<QP> *queries) {
 
 void insert_thread(Ext *extension, std::vector<Rec> *records, size_t start_idx,
                    size_t stop_idx) {
+  gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+
   TIMER_INIT();
 
   TIMER_START();
   for (size_t i = start_idx; i < stop_idx; i++) {
-    while (!extension->insert((*records)[i])) {
+    while (!extension->insert((*records)[i], rng)) {
       usleep(1);
     }
   }
 
   TIMER_STOP();
   total_insert_time.fetch_add(TIMER_RESULT());
+  gsl_rng_free(rng);
 }
 
 void usage(char *progname) {
@@ -99,16 +102,15 @@ int main(int argc, char **argv) {
   std::string q_fname = std::string(argv[3]);
 
   auto data = read_sosd_file<Rec>(d_fname, n);
-  //auto queries = read_range_queries<QP>(q_fname, .0001);
-  auto queries =read_sosd_point_lookups<QP>(q_fname, 100);
+  // auto queries = read_range_queries<QP>(q_fname, .0001);
+  auto queries = read_sosd_point_lookups<QP>(q_fname, 100);
 
-  std::vector<size_t> sfs = {8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {0, 1, 2};
-
-  std::vector<size_t> thread_counts = {8};
+  std::vector<size_t> policies = {6};
+  std::vector<size_t> thread_counts = {32};
   std::vector<size_t> modifiers = {0};
-  std::vector<size_t> scale_factors = {2, 4, 8, 16, 32, 64, 128, 256};
+  std::vector<size_t> scale_factors = {6};
+  std::vector<double> rate_limits = {1, 0.9999, 0.999, 0.99, 0.9, 0.85, 0.8};
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -119,74 +121,77 @@ int main(int argc, char **argv) {
     for (auto internal_thread_cnt : thread_counts) {
       for (auto mod : modifiers) {
         for (auto sf : scale_factors) {
-          auto policy = get_policy<Shard, Q>(sf, buffer_size, pol, n, mod);
-          auto config = Conf(std::move(policy));
-          config.recon_enable_maint_on_flush = true;
-          config.recon_maint_disabled = false;
-          // config.buffer_flush_trigger = 4000;
-          config.maximum_threads = internal_thread_cnt;
+          for (auto lim : rate_limits) {
 
-          g_thrd_cnt = internal_thread_cnt;
+            auto policy = get_policy<Shard, Q>(sf, buffer_size, pol, n, mod);
+            auto config = Conf(std::move(policy));
+            config.recon_enable_maint_on_flush = true;
+            config.recon_maint_disabled = false;
+            // config.buffer_flush_trigger = 4000;
+            config.maximum_threads = internal_thread_cnt;
 
-          total_insert_time.store(0);
-          total_query_time.store(0);
-          total_query_count.store(0);
+            g_thrd_cnt = internal_thread_cnt;
 
-          auto extension = new Ext(std::move(config));
+            total_insert_time.store(0);
+            total_query_time.store(0);
+            total_query_count.store(0);
 
-          /* warmup structure w/ 10% of records */
-          size_t warmup = .3 * n;
-          for (size_t k = 0; k < warmup; k++) {
-            while (!extension->insert(data[k])) {
-              usleep(1);
+            auto extension = new Ext(std::move(config), lim);
+
+            /* warmup structure w/ 10% of records */
+            size_t warmup = .3 * n;
+            for (size_t k = 0; k < warmup; k++) {
+              while (!extension->insert(data[k])) {
+                usleep(1);
+              }
             }
+
+            extension->await_version();
+
+            idx.store(warmup);
+
+            std::thread i_thrds[insert_threads];
+            std::thread q_thrds[query_threads];
+
+            size_t per_insert_thrd = (n - warmup) / insert_threads;
+            size_t start = warmup;
+
+            for (size_t i = 0; i < insert_threads; i++) {
+              i_thrds[i] = std::thread(insert_thread, extension, &data, start,
+                                       start + per_insert_thrd);
+              start += per_insert_thrd;
+            }
+
+            for (size_t i = 0; i < query_threads; i++) {
+              q_thrds[i] = std::thread(query_thread, extension, &queries);
+            }
+
+            for (size_t i = 0; i < insert_threads; i++) {
+              i_thrds[i].join();
+            }
+
+            inserts_done.store(true);
+
+            for (size_t i = 0; i < query_threads; i++) {
+              q_thrds[i].join();
+            }
+
+            fprintf(stderr, "%ld\n", total_res.load());
+
+            size_t insert_tput =
+                ((double)(n - warmup) / (double)total_insert_time) * 1e9;
+            size_t query_lat = (double)total_query_time.load() /
+                               (double)total_query_count.load();
+
+            fprintf(stdout, "%ld\t%lf\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n",
+                    internal_thread_cnt, lim, pol, sf, mod, extension->get_height(),
+                    extension->get_shard_count(), insert_tput, query_lat);
+            fflush(stdout);
+
+            total_res.store(0);
+            inserts_done.store(false);
+            delete extension;
           }
-
-          extension->await_version();
-
-          idx.store(warmup);
-
-          std::thread i_thrds[insert_threads];
-          std::thread q_thrds[query_threads];
-
-          size_t per_insert_thrd = (n - warmup) / insert_threads;
-          size_t start = warmup;
-
-          for (size_t i = 0; i < insert_threads; i++) {
-            i_thrds[i] = std::thread(insert_thread, extension, &data, start,
-                                     start + per_insert_thrd);
-            start += per_insert_thrd;
-          }
-
-          for (size_t i = 0; i < query_threads; i++) {
-            q_thrds[i] = std::thread(query_thread, extension, &queries);
-          }
-
-          for (size_t i = 0; i < insert_threads; i++) {
-            i_thrds[i].join();
-          }
-
-          inserts_done.store(true);
-
-          for (size_t i = 0; i < query_threads; i++) {
-            q_thrds[i].join();
-          }
-
-          fprintf(stderr, "%ld\n", total_res.load());
-
-          size_t insert_tput =
-              ((double)(n - warmup) / (double)total_insert_time) * 1e9;
-          size_t query_lat = (double)total_query_time.load() /
-                             (double)total_query_count.load();
-
-          fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
-                  mod, extension->get_height(), extension->get_shard_count(),
-                  insert_tput, query_lat);
-          fflush(stdout);
-
-          total_res.store(0);
-          inserts_done.store(false);
-          delete extension;
         }
       }
     }

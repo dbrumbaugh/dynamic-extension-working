@@ -70,7 +70,7 @@ public:
    *        for various configuration parameters in the system. See
    *        include/framework/util/Configuration.h for details.
    */
-  DynamicExtension(ConfType &&config) : m_config(std::move(config)) {
+  DynamicExtension(ConfType &&config, double insertion_rate=1.0) : m_config(std::move(config)) {
     m_buffer = std::make_unique<BufferType>(m_config.buffer_flush_trigger,
                                             m_config.buffer_size);
 
@@ -81,7 +81,7 @@ public:
 
     m_version_counter = INITIAL_VERSION;
     m_preempt_version = INVALID_VERSION;
-    m_insertion_rate.store(1.0);
+    m_insertion_rate.store(insertion_rate);
     assert(m_config.recon_policy);
   }
 
@@ -493,6 +493,7 @@ private:
      * this code will be bypassed in that case.
      */
     if (args->priority == ReconstructionPriority::FLUSH) {
+      fprintf(stdout, "S\t%ld\n", extension->get_shard_count());
       // fprintf(stderr, "[I] Running flush (%ld)\n", recon_id);
       // fprintf(stderr, "[I]\t Assigned Version %ld (%ld)\n",
       // args->version->get_id(), recon_id);
@@ -656,6 +657,7 @@ private:
 
     // fprintf(stderr, "[I] Reconstruction to Version %ld Finished (%ld)\n",
     // args->version->get_id(), recon_id);
+
 
     /* manually delete the argument object */
     delete args;

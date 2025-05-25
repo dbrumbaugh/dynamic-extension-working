@@ -338,6 +338,11 @@ if (tail_bench)
     target_include_directories(knn_query_parm_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(knn_query_parm_sweep PUBLIC -mcx16)
 
+    add_executable(stall_benchmark ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/stall_benchmark.cpp)
+    target_link_libraries(stall_benchmark PUBLIC gsl pthread atomic)
+    target_include_directories(stall_benchmark PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(stall_benchmark PUBLIC -mcx16)
+
 endif()
 
 if (bench) 

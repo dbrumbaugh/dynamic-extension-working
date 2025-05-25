@@ -25,6 +25,7 @@
 #include "framework/reconstruction/TieringPolicy.h"
 #include "framework/reconstruction/BSMPolicy.h"
 #include "framework/reconstruction/FloodL0Policy.h"
+#include "framework/reconstruction/CompactOnFull.h"
 #include "framework/reconstruction/BackgroundTieringPolicy.h"
 
 constexpr double delete_proportion = 0.05;
@@ -49,6 +50,8 @@ std::unique_ptr<de::ReconstructionPolicy<S, Q>> get_policy(size_t scale_factor, 
         recon = new de::FixedShardCountPolicy<S, Q>(buffer_size, scale_factor, reccnt);
     } else if (policy == 5) {
         recon = new de::BackgroundTieringPolicy<S, Q>(scale_factor, buffer_size, modifier);
+    } else if (policy == 6) {
+        recon = new de::CompactOnFull<S, Q>(scale_factor, buffer_size, modifier);
     }
 
     return std::unique_ptr<de::ReconstructionPolicy<S, Q>>(recon);

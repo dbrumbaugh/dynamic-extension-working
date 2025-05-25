@@ -12,3 +12,6 @@ tests/data
 
 data/*
 queries/*
+*.txt
+*.tsv
+*.dat
