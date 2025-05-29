@@ -87,6 +87,26 @@ static std::vector<QP> read_range_queries(std::string &fname,
 }
 
 template <typename QP>
+static std::vector<QP> generate_uniform_range_queries(size_t n, size_t key_limit, double selectivity) {
+  std::vector<QP> queries;
+
+  gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+  size_t query_size = key_limit * selectivity;
+
+  for (size_t i=0; i<n; i++) {
+    QP q;
+    q.lower_bound = gsl_rng_uniform_int(rng, key_limit - query_size);
+    q.upper_bound = q.lower_bound + query_size;
+
+    queries.push_back(q);
+  }
+
+  gsl_rng_free(rng);
+
+  return queries;
+}
+
+template <typename QP>
 static std::vector<QP> read_sosd_point_lookups(std::string &fname, size_t n) {
   std::vector<QP> queries;
 
