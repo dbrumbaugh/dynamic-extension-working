@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
   std::string q_fname = std::string(argv[3]);
 
   auto data = read_vector_file<Rec, W2V_SIZE>(d_fname, n);
-  auto queries = read_knn_queries<QP>(q_fname, 15, 1);
 
   size_t buffer_size = 1000;
   std::vector<size_t> policies = {0, 1};
@@ -77,7 +76,7 @@ int main(int argc, char **argv) {
   std::vector<size_t> thread_counts = {8};
   std::vector<double> modifiers = {0};
   std::vector<size_t> scale_factors = {2, 4, 8}; 
-  std::vector<size_t> knn_sizes = {10, 50, 100, 500, 1000};
+  std::vector<size_t> knn_sizes = {1, 10, 100, 1000};
 
   reccnt = n;
 
