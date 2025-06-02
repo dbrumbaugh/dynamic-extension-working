@@ -493,7 +493,10 @@ private:
      * this code will be bypassed in that case.
      */
     if (args->priority == ReconstructionPriority::FLUSH) {
-      //fprintf(stdout, "S\t%ld\n", extension->get_shard_count());
+      #ifdef DE_PRINT_SHARD_COUNT
+        fprintf(stdout, "S\t%ld\n", extension->get_shard_count());
+      #endif
+
       // fprintf(stderr, "[I] Running flush (%ld)\n", recon_id);
       // fprintf(stderr, "[I]\t Assigned Version %ld (%ld)\n",
       // args->version->get_id(), recon_id);

@@ -15,8 +15,8 @@
 #include "framework/scheduling/FIFOScheduler.h"
 #include "framework/scheduling/SerialScheduler.h"
 #include "framework/util/Configuration.h"
-#include "query/pointlookup.h"
-#include "shard/ISAMTree.h"
+#include "query/knn.h"
+#include "shard/VPTree.h"
 #include "standard_benchmarks.h"
 #include "util/types.h"
 
@@ -26,9 +26,9 @@
 
 #include "psu-util/timer.h"
 
-typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::ISAMTree<Rec> Shard;
-typedef de::pl::Query<Shard> Q;
+typedef Word2VecRec Rec;
+typedef de::VPTree<Rec> Shard;
+typedef de::knn::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
                              de::FIFOScheduler>
     Ext;
@@ -84,9 +84,9 @@ int main(int argc, char **argv) {
   size_t pol = std::atol(argv[4]);
   assert(pol >= 0 && pol <= 6);
 
-  auto data = read_sosd_file<Rec>(d_fname, n);
+  auto data = read_vector_file<Rec, 300>(d_fname, n);
 
-  size_t buffer_size = 8000;
+  size_t buffer_size = 1000;
   size_t scale_factor = 8;
   double modifier = 0;
   size_t insert_threads = 1;
