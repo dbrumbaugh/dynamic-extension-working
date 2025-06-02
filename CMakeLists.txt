@@ -348,6 +348,10 @@ if (tail_bench)
     target_include_directories(selectivity_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(selectivity_sweep PUBLIC -mcx16)
 
+    add_executable(knn_selectivity_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/knn_selectivity_sweep.cpp)
+    target_link_libraries(knn_selectivity_sweep PUBLIC gsl pthread atomic)
+    target_include_directories(knn_selectivity_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(knn_selectivity_sweep PUBLIC -mcx16)
 endif()
 
 if (bench) 
