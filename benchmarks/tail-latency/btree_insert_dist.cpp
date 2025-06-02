@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
     /* warmup structure w/ 10% of records */
-    size_t warmup = .1 * n;
+    size_t warmup = .3 * n;
     for (size_t i=0; i<warmup; i++) {
         btree.insert(data[i]);
     }

@@ -2,17 +2,18 @@
  *
  */
 
+#define ENABLE_TIMER
+#define TS_TEST
+
 #include "framework/scheduling/SerialScheduler.h"
 #include "framework/util/Configuration.h"
 #include "util/types.h"
-#define ENABLE_TIMER
-#define TS_TEST
 
 #include <thread>
 
 #include "framework/DynamicExtension.h"
 #include "framework/scheduling/FIFOScheduler.h"
-#include "shard/TrieSpline.h"
+#include "shard/ISAMTree.h"
 #include "query/rangecount.h"
 #include "framework/interface/Record.h"
 #include "file_util.h"
@@ -26,11 +27,11 @@
 
 
 typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::TrieSpline<Rec> Shard;
+typedef de::ISAMTree<Rec> Shard;
 typedef de::rc::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::FIFOScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
 typedef Q::Parameters QP;
-typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE, de::FIFOScheduler> Conf;
+typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Conf;
 
 void usage(char *progname) {
     fprintf(stderr, "%s reccnt datafile queryfile\n", progname);
@@ -50,9 +51,9 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
-    std::vector<size_t> sfs = {2, 3, 4, 5, 6, 7, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
+    std::vector<size_t> sfs = {4, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
     size_t buffer_size = 8000;
-    std::vector<size_t> policies = {0, 1, 2};
+    std::vector<size_t> policies = {0, 1};
 
     for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
@@ -83,7 +84,6 @@ int main(int argc, char **argv) {
         for (size_t j=warmup; j<data.size(); j++) {
             while (!extension->insert(data[j])) {
                 usleep(1);
-                fprintf(stderr, "insert blocked %ld\r", j);
             }
         }
         TIMER_STOP();

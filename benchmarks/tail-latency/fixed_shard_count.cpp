@@ -2,6 +2,7 @@
  *
  */
 
+#include "framework/scheduling/SerialScheduler.h"
 #define ENABLE_TIMER
 #define TS_TEST
 
@@ -9,8 +10,9 @@
 
 #include "framework/DynamicExtension.h"
 #include "framework/scheduling/FIFOScheduler.h"
-#include "shard/TrieSpline.h"
+#include "shard/ISAMTree.h"
 #include "query/rangecount.h"
+#include "framework/util/Configuration.h"
 #include "framework/interface/Record.h"
 #include "file_util.h"
 #include "standard_benchmarks.h"
@@ -23,10 +25,11 @@
 
 
 typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::TrieSpline<Rec> Shard;
+typedef de::ISAMTree<Rec> Shard;
 typedef de::rc::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::FIFOScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
 typedef Q::Parameters QP;
+typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Conf;
 
 void usage(char *progname) {
     fprintf(stderr, "%s reccnt datafile queryfile\n", progname);
@@ -52,10 +55,16 @@ int main(int argc, char **argv) {
 
     for (size_t i=0; i<shard_counts.size(); i++) {
         auto policy = get_policy<Shard, Q>(shard_counts[i], buffer_size, 4, n);
-        auto extension = new Ext(std::move(policy));
+        auto config = Conf(std::move(policy));
+        config.recon_enable_maint_on_flush = false;
+        config.recon_maint_disabled = true;
+        config.buffer_flush_trigger = 4000;
+        config.maximum_threads = 8;
+
+        auto extension = new Ext(std::move(config));
 
         /* warmup structure w/ 10% of records */
-        size_t warmup = .1 * n;
+        size_t warmup = .3 * n;
         for (size_t i=0; i<warmup; i++) {
             while (!extension->insert(data[i])) {
                 usleep(1);

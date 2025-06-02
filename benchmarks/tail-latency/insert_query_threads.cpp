@@ -106,11 +106,11 @@ int main(int argc, char **argv) {
   auto queries = read_sosd_point_lookups<QP>(q_fname, 100);
 
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {6};
+  std::vector<size_t> policies = {0};
   std::vector<size_t> thread_counts = {32};
   std::vector<size_t> modifiers = {0};
   std::vector<size_t> scale_factors = {6};
-  std::vector<double> rate_limits = {1, 0.9999, 0.999, 0.99, 0.9, 0.85, 0.8};
+  std::vector<double> rate_limits = {1};
 
   size_t insert_threads = 1;
   size_t query_threads = 1;

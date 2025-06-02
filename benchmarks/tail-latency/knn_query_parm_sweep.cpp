@@ -105,14 +105,14 @@ int main(int argc, char **argv) {
   //auto queries =read_sosd_point_lookups<QP>(q_fname, 1);
 
   auto data = read_vector_file<Rec, W2V_SIZE>(d_fname, n);
-  auto queries = read_knn_queries<QP>(q_fname, 15, 1);
+  auto queries = read_knn_queries<QP>(q_fname, 100, 1);
 
-  size_t buffer_size = 8000;
-  std::vector<size_t> policies = {0};
+  size_t buffer_size = 1000;
+  std::vector<size_t> policies = {0, 1};
 
   std::vector<size_t> thread_counts = {8};
   std::vector<double> modifiers = {0};
-  std::vector<size_t> scale_factors = {2, 4, 6, 8, 10}; 
+  std::vector<size_t> scale_factors = {2, 4, 6, 8, 16, 32, 128}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -171,14 +171,14 @@ int main(int argc, char **argv) {
           extension->await_version();
 
           /* run some queries to "warm up" the cache */
-          for (size_t i=0; i<queries.size()*2; i++) {
+          for (size_t i=0; i<queries.size()*5; i++) {
             auto q_idx = i % queries.size();
             auto q = queries[q_idx];
             auto res = extension->query(std::move(q)).get();
             total_res.fetch_add(res.size());
           }
 
-          total_query_count.store(100000);
+          total_query_count.store(5000);
           TIMER_INIT();
           TIMER_START();
           for (size_t i=0; i<total_query_count; i++) {
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
           fprintf(stdout, "%ld\t%ld\t%ld\t%lf\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
                   mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
-          extension->print_scheduler_statistics();
+          //extension->print_scheduler_statistics();
           //extension->print_scheduler_query_data();
           //extension->print_structure();
           fflush(stdout);

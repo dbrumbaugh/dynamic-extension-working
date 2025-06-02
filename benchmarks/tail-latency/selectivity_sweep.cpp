@@ -49,13 +49,13 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
 
     std::vector<std::vector<QP>> query_sets;
-    std::vector<double> selectivities = {0, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1};
+    std::vector<double> selectivities = {0.0000001}; //, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, .25};
 
     for (auto sel: selectivities) {
         query_sets.push_back(generate_uniform_range_queries<QP>(100, n, sel));
     }
 
-    std::vector<size_t> sfs = {2, 4, 8}; //, 4, 8, 16, 32, 64, 128, 256, 512, 1024}; 
+    std::vector<size_t> sfs = {2, 4, 8, 16, 32, 64, 128}; 
     size_t buffer_size = 8000;
     std::vector<size_t> policies = {0, 1};
 

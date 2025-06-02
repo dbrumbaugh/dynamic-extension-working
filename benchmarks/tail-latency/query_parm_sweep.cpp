@@ -103,11 +103,11 @@ int main(int argc, char **argv) {
   auto queries =read_sosd_point_lookups<QP>(q_fname, 1);
 
   size_t buffer_size = 8000;
-  std::vector<size_t> policies = {1};
+  std::vector<size_t> policies = {0, 1};
 
   std::vector<size_t> thread_counts = {8};
   std::vector<double> modifiers = {0};
-  std::vector<size_t> scale_factors = {4, 4, 4, 4}; 
+  std::vector<size_t> scale_factors = {2, 4, 6, 8, 16, 32, 64}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -195,8 +195,8 @@ int main(int argc, char **argv) {
           fprintf(stdout, "%ld\t%ld\t%ld\t%lf\t%ld\t%ld\t%ld\t%ld\n", internal_thread_cnt, pol, sf,
                   mod, extension->get_height(), extension->get_shard_count(),
                   insert_tput, query_lat);
-          extension->print_scheduler_statistics();
-          extension->print_scheduler_query_data();
+          //extension->print_scheduler_statistics();
+          //extension->print_scheduler_query_data();
           //extension->print_structure();
           fflush(stdout);
 
