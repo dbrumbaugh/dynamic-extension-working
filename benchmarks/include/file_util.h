@@ -8,6 +8,7 @@
 #include <gsl/gsl_rng.h>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -214,7 +215,9 @@ static std::vector<R> generate_uniform(size_t n) {
         records[i].value = i;
     }
 
-    std::random_shuffle(records.begin(), records.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(records.begin(), records.end(), g);
 
     return records;
 }
