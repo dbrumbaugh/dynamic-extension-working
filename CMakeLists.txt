@@ -348,6 +348,11 @@ if (tail_bench)
     target_include_directories(stall_benchmark_vptree PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(stall_benchmark_vptree PUBLIC -mcx16)
 
+    add_executable(isam_construction_times ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/isam_construction_times.cpp)
+    target_link_libraries(isam_construction_times PUBLIC gsl pthread atomic)
+    target_include_directories(isam_construction_times PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(isam_construction_times PUBLIC -mcx16)
+
     add_executable(selectivity_sweep ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/selectivity_sweep.cpp)
     target_link_libraries(selectivity_sweep PUBLIC gsl pthread atomic)
     target_include_directories(selectivity_sweep PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)

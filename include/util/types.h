@@ -115,7 +115,7 @@ public:
                           size_t reccnt, ReconstructionType type) {
 
     m_tasks.push_back({std::move(shards), target, reccnt, type});
-    
+    total_reccnt += reccnt;
   }
 
   void add_reconstruction(level_index source, level_index target,
@@ -130,7 +130,10 @@ public:
     total_reccnt += reccnt;
   }
 
-  void add_reconstruction(ReconstructionTask task) { m_tasks.push_back(task); }
+  void add_reconstruction(ReconstructionTask task) {
+    m_tasks.push_back(task);
+    total_reccnt += task.reccnt;
+  }
 
   size_t get_total_reccnt() { return total_reccnt; }
 
