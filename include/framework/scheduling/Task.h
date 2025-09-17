@@ -38,6 +38,7 @@ struct ReconstructionArgs {
   void *extension;
   ReconstructionPriority priority;
   size_t initial_version;
+  long predicted_runtime;
 };
 
 template <ShardInterface S, QueryInterface<S> Q, typename DE> struct QueryArgs {
