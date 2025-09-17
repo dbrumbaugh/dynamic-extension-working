@@ -14,8 +14,8 @@
 #include "framework/scheduling/FIFOScheduler.h"
 #include "framework/scheduling/SerialScheduler.h"
 #include "framework/util/Configuration.h"
-#include "query/pointlookup.h"
-#include "shard/ISAMTree.h"
+#include "query/knn.h"
+#include "shard/VPTree.h"
 #include "standard_benchmarks.h"
 #include "util/types.h"
 
@@ -25,9 +25,10 @@
 
 #include "psu-util/timer.h"
 
-typedef de::Record<uint64_t, uint64_t> Rec;
-typedef de::ISAMTree<Rec> Shard;
-typedef de::pl::Query<Shard> Q;
+
+typedef Word2VecRec Rec;
+typedef de::VPTree<Rec> Shard;
+typedef de::knn::Query<Shard> Q;
 typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE,
                              de::FIFOScheduler>
     Ext;
@@ -62,6 +63,8 @@ void query_thread(Ext *extension, std::vector<QP> *queries) {
     TIMER_START();
     auto res = extension->query(std::move(q)).get();
     TIMER_STOP();
+
+    usleep(100000);
 
     total_query_time.fetch_add(TIMER_RESULT());
     total_res.fetch_add(res.size());
@@ -101,16 +104,15 @@ int main(int argc, char **argv) {
   std::string d_fname = std::string(argv[2]);
   std::string q_fname = std::string(argv[3]);
 
-  auto data = read_sosd_file<Rec>(d_fname, n);
-  // auto queries = read_range_queries<QP>(q_fname, .0001);
-  auto queries = read_sosd_point_lookups<QP>(q_fname, 100);
+  auto data = read_vector_file<Rec, W2V_SIZE>(d_fname, n);
+  auto queries = read_knn_queries<QP>(q_fname, 100, 1);
 
-  size_t buffer_size = 8000;
-  std::vector<size_t> policies = {6};
-  std::vector<size_t> thread_counts = {1, 2, 4, 8, 32};
+  size_t buffer_size = 1000;
+  std::vector<size_t> policies = {0};
+  std::vector<size_t> thread_counts = {32};
   std::vector<size_t> modifiers = {0};
-  std::vector<size_t> scale_factors = {6}; 
-  std::vector<double> rate_limits = {.95, .99, .993, .995, .998, .9985, .999, 1};
+  std::vector<size_t> scale_factors = {8}; 
+  std::vector<double> rate_limits = {1}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
@@ -127,7 +129,10 @@ int main(int argc, char **argv) {
             auto config = Conf(std::move(policy));
             config.recon_enable_maint_on_flush = true;
             config.recon_maint_disabled = false;
-            // config.buffer_flush_trigger = 4000;
+            config.buffer_size = buffer_size;
+            config.buffer_flush_trigger = buffer_size;
+            config.buffer_flush_query_preemption_trigger = 4e5;
+
             config.maximum_threads = internal_thread_cnt;
 
             g_thrd_cnt = internal_thread_cnt;

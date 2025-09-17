@@ -333,6 +333,11 @@ if (tail_bench)
     target_include_directories(insert_query_threads PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
     target_link_options(insert_query_threads PUBLIC -mcx16)
 
+    add_executable(knn_insert_query_threads ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/knn_insert_query_threads.cpp)
+    target_link_libraries(knn_insert_query_threads PUBLIC gsl pthread atomic)
+    target_include_directories(knn_insert_query_threads PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)
+    target_link_options(knn_insert_query_threads PUBLIC -mcx16)
+
     add_executable(query_detail ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/tail-latency/query_detail.cpp)
     target_link_libraries(query_detail PUBLIC gsl pthread atomic)
     target_include_directories(query_detail PRIVATE include external external/m-tree/cpp external/PGM-index/include external/PLEX/include benchmarks/include external/psudb-common/cpp/include)

@@ -99,6 +99,8 @@ int main(int argc, char **argv) {
   auto config = Conf(std::move(policy));
   config.recon_enable_maint_on_flush = true;
   config.recon_maint_disabled = false;
+  config.buffer_size = buffer_size;
+  config.buffer_flush_trigger = buffer_size;
   // config.buffer_flush_trigger = 4000;
   config.maximum_threads = internal_thread_cnt;
 

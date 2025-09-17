@@ -55,20 +55,24 @@ int main(int argc, char **argv) {
         query_sets.push_back(generate_uniform_range_queries<QP>(100, n, sel));
     }
 
-    std::vector<size_t> sfs = {2, 4, 8, 16, 32, 64, 128}; 
-    size_t buffer_size = 8000;
-    std::vector<size_t> policies = {0, 1};
+    std::vector<size_t> sfs = {8};
+    std::vector<double> stalls = {1};
+    std::vector<size_t> buffer_sizes = {100, 1000, 5000, 10000, 20000, 100000};
+    std::vector<size_t> policies = {0,1,2};
 
     for (auto pol: policies) {
     for (size_t i=0; i<sfs.size(); i++) {
-        auto policy = get_policy<Shard, Q>(sfs[i], buffer_size, pol, n);
+        for (size_t j=0; j<stalls.size(); j++) {
+            for (auto bs: buffer_sizes) {
+        auto policy = get_policy<Shard, Q>(sfs[i], bs, pol, n);
         auto config = Conf(std::move(policy));
         config.recon_enable_maint_on_flush = false;
         config.recon_maint_disabled = true;
-        config.buffer_flush_trigger = 4000;
+        config.buffer_size = bs;
+        config.buffer_flush_trigger = config.buffer_size;
         config.maximum_threads = 8;
         
-        auto extension = new Ext(std::move(config));
+        auto extension = new Ext(std::move(config), stalls[j]);
 
         /* warmup structure w/ 10% of records */
         size_t warmup = .1 * n;
@@ -88,7 +92,7 @@ int main(int argc, char **argv) {
         for (size_t j=warmup; j<data.size(); j++) {
             while (!extension->insert(data[j])) {
                 usleep(1);
-                fprintf(stderr, "insert blocked %ld\r", j);
+                //fprintf(stderr, "insert blocked %ld\r", j);
             }
         }
         TIMER_STOP();
@@ -105,7 +109,7 @@ int main(int argc, char **argv) {
         /* repeat the queries a bunch of times */
 
         auto insert_throughput =  (size_t) ((double) (n - warmup) / (double) total_insert_lat *1.0e9);
-        fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t", pol, sfs[i], n, insert_throughput);
+        fprintf(stdout, "%ld\t%ld\t%ld\t%ld\t%lf\t%ld\t", pol, bs, sfs[i], extension->get_record_count(), stalls[j], insert_throughput);
 
         size_t total = 0;
         for (size_t l=0; l<query_sets.size(); l++) {
@@ -126,6 +130,8 @@ int main(int argc, char **argv) {
 
         // extension->print_structure();
         delete extension;
+    }
+    }
     }
     }
 

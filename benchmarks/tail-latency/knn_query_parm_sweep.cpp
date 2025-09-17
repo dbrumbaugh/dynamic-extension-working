@@ -107,26 +107,28 @@ int main(int argc, char **argv) {
   auto data = read_vector_file<Rec, W2V_SIZE>(d_fname, n);
   auto queries = read_knn_queries<QP>(q_fname, 100, 1);
 
-  size_t buffer_size = 1000;
-  std::vector<size_t> policies = {0, 1};
+  std::vector<size_t> buffer_sizes = {100, 500, 1000, 10000};
+  std::vector<size_t> policies = {0, 1, 2};
 
   std::vector<size_t> thread_counts = {8};
   std::vector<double> modifiers = {0};
-  std::vector<size_t> scale_factors = {2, 4, 6, 8, 16, 32, 128}; 
+  std::vector<size_t> scale_factors = {2, 8}; 
 
   size_t insert_threads = 1;
   size_t query_threads = 1;
 
   reccnt = n;
 
+  for (auto bs : buffer_sizes) {
   for (auto pol : policies) {
     for (auto internal_thread_cnt : thread_counts) {
       for (auto mod : modifiers) {
         for (auto sf : scale_factors) {
-          auto policy = get_policy<Shard, Q>(sf, buffer_size, pol, n, mod);
+          auto policy = get_policy<Shard, Q>(sf, bs, pol, n, mod);
           auto config = Conf(std::move(policy));
           config.recon_enable_maint_on_flush = true;
           config.recon_maint_disabled = false;
+          config.buffer_size = bs;
           config.buffer_flush_trigger = config.buffer_size;
           config.maximum_threads = internal_thread_cnt;
 
@@ -211,6 +213,7 @@ int main(int argc, char **argv) {
         }
       }
     }
+  }
   }
 
   fflush(stderr);

@@ -68,12 +68,12 @@ void insert_thread(Ext *extension, std::vector<Rec> *records, size_t start_idx,
 }
 
 void usage(char *progname) {
-  fprintf(stderr, "%s reccnt datafile rate_limit policy\n", progname);
+  fprintf(stderr, "%s reccnt datafile rate_limit buffer_size policy\n", progname);
 }
 
 int main(int argc, char **argv) {
 
-  if (argc < 5) {
+  if (argc < 6) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
@@ -81,12 +81,12 @@ int main(int argc, char **argv) {
   size_t n = atol(argv[1]);
   std::string d_fname = std::string(argv[2]);
   double rate_limit = std::atof(argv[3]);
-  size_t pol = std::atol(argv[4]);
+  size_t buffer_size = std::atol(argv[4]);
+  size_t pol = std::atol(argv[5]);
   assert(pol >= 0 && pol <= 6);
 
   auto data = read_sosd_file<Rec>(d_fname, n);
 
-  size_t buffer_size = 8000;
   size_t scale_factor = 8;
   double modifier = 0;
   size_t insert_threads = 1;
@@ -99,7 +99,8 @@ int main(int argc, char **argv) {
   auto config = Conf(std::move(policy));
   config.recon_enable_maint_on_flush = true;
   config.recon_maint_disabled = false;
-  // config.buffer_flush_trigger = 4000;
+  config.buffer_size = buffer_size;
+  config.buffer_flush_trigger = buffer_size;
   config.maximum_threads = internal_thread_cnt;
 
   g_thrd_cnt = internal_thread_cnt;

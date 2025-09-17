@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   size_t buffer_size = 1000;
   std::vector<size_t> policies = {0, 1};
 
-  std::vector<size_t> thread_counts = {8};
+  std::vector<size_t> thread_counts = {32};
   std::vector<double> modifiers = {0};
   std::vector<size_t> scale_factors = {2, 4, 8}; 
   std::vector<size_t> knn_sizes = {1, 10, 100, 1000};
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
           auto config = Conf(std::move(policy));
           config.recon_enable_maint_on_flush = true;
           config.recon_maint_disabled = false;
+          config.buffer_size = buffer_size;
           config.buffer_flush_trigger = config.buffer_size;
           config.maximum_threads = internal_thread_cnt;
 
@@ -116,6 +117,9 @@ int main(int argc, char **argv) {
 
           idx.store(warmup);
 
+          fprintf(stderr, "Inserts done\n");
+          fflush(stderr);
+
           extension->await_version();
 
 
@@ -123,14 +127,15 @@ int main(int argc, char **argv) {
           size_t total = 0;
           for (size_t l=0; l<query_sets.size(); l++) {
               TIMER_START();
-              for (size_t f=0; f<query_sets[l].size()*10; f++) {
-                  auto q = query_sets[l][f%10];
+              for (size_t f=0; f<query_sets[l].size(); f++) {
+                  auto q = query_sets[l][f];
                   auto res = extension->query(std::move(q));
                   total += res.get().size();
               }
               TIMER_STOP();
-              auto query_latency = (TIMER_RESULT()) / (10*query_sets[l].size());
+              auto query_latency = (TIMER_RESULT()) / (query_sets[l].size());
               fprintf(stdout, "%ld\t%ld\t", knn_sizes[l], query_latency);
+              fflush(stdout);
           }
 
           fprintf(stdout, "\n");
