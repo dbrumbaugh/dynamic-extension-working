@@ -118,10 +118,9 @@ public:
     size_t first_query = UINT64_MAX;
 
 
-    /* hard-coded for the moment to only consider queries */
     for (auto &job : m_jobs) {
       if (job.second.type != 1) {
-        continue;
+        fprintf(stdout, "%ld %ld %ld %ld\n", job.second.id, job.second.size, job.second.runtime(), job.second.runtime() / (job.second.size));
       }
 
       if (job.first < first_query) {
@@ -152,8 +151,8 @@ public:
     }
     
 
-    int64_t average_queue_time = total_queue_time / query_cnt;
-    int64_t average_runtime = total_runtime / query_cnt;
+    int64_t average_queue_time = (query_cnt) ? total_queue_time / query_cnt : 0;
+    int64_t average_runtime = (query_cnt) ? total_runtime / query_cnt : 0;
 
     /* calculate standard deviations */
     int64_t queue_deviation_sum = 0;
@@ -168,8 +167,8 @@ public:
       
     }
 
-    int64_t queue_stddev = std::sqrt(queue_deviation_sum / query_cnt);
-    int64_t runtime_stddev = std::sqrt(runtime_deviation_sum / query_cnt);
+    int64_t queue_stddev = (query_cnt) ? std::sqrt(queue_deviation_sum / query_cnt) : 0;
+    int64_t runtime_stddev = (query_cnt) ? std::sqrt(runtime_deviation_sum / query_cnt) : 0;
     
 
     fprintf(stdout, "Query Count: %ld\tWorst Query: %ld\tFirst Query: %ld\n", query_cnt, worst_query, first_query);
