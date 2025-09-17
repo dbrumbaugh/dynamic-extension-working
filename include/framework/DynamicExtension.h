@@ -604,10 +604,8 @@ private:
 
     /* apply our updates to the copied structure (adding/removing shards) */
     for (auto recon : reconstructions) {
-      auto grow = args->version->get_mutable_structure()->append_shard(
-          recon.new_shard, args->version->get_id(), recon.target_level);
-      args->version->get_mutable_structure()->delete_shards(
-          recon.source_shards);
+      auto grow = args->version->get_mutable_structure()->apply_reconstruction(
+          recon, args->version->get_id());
       if (grow) {
         extension->m_lock_mngr.add_lock();
       }

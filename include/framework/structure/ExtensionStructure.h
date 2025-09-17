@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -196,7 +197,13 @@ public:
       result.source_shards.emplace_back(shid.level_idx, raw_shard_ptr);
     }
 
+
+    auto start = std::chrono::high_resolution_clock::now();
     result.new_shard = std::make_shared<ShardType>(shards);
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    result.runtime =  std::chrono::duration_cast<std::chrono::nanoseconds>(stop- start).count();
+    result.reccnt = result.new_shard->get_record_count();
 
     return result;
   }
@@ -216,6 +223,14 @@ public:
 
   size_t l0_size() const {
     return m_levels[0]->get_shard_count();
+  }
+
+  bool apply_reconstruction(reconstruction_results<ShardType> &recon, size_t version) {
+    bool res = append_shard(recon.new_shard, version, recon.target_level);
+    m_levels[recon.target_level]->update_reconstruction_model(recon);
+    delete_shards(recon.source_shards);
+
+    return res;
   }
 
   bool append_shard(std::shared_ptr<ShardType> shard, size_t version, size_t level) {

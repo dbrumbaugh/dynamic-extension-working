@@ -233,6 +233,14 @@ public:
     }
   }
 
+  long predict_reconstruction_time(size_t reccnt) {
+    return 0;
+  }
+
+  void update_reconstruction_model(reconstruction_results<ShardType> &recon) {
+    
+  }
+
 private:
   ssize_t m_level_no;
   std::vector<shard_ptr> m_shards;

@@ -88,6 +88,9 @@ struct reconstruction_results {
   std::shared_ptr<ShardType> new_shard;
   std::vector<std::pair<level_index, const ShardType *>> source_shards;
   size_t target_level;
+  size_t reccnt;
+  long runtime;
+  
 };
 
 typedef struct ReconstructionTask {
