@@ -48,6 +48,8 @@ class DEConfiguration {
 
     size_t buffer_flush_query_preemption_trigger = UINT64_MAX;
 
+    bool dynamic_ratelimiting = false;
+    size_t rt_level_scale = 1;
 };
 
 } // namespace de

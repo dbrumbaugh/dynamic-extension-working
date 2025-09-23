@@ -18,6 +18,8 @@
 #include <future>
 #include <memory>
 #include <vector>
+#include <deque>
+#include <algorithm>
 
 #include "framework/interface/Query.h"
 #include "framework/interface/Shard.h"
@@ -32,7 +34,7 @@ class InternalLevel {
   typedef std::pair<std::shared_ptr<ShardType>, size_t> shard_ptr;
 
 public:
-  InternalLevel(ssize_t level_no) : m_level_no(level_no) {}
+  InternalLevel(ssize_t level_no) : m_level_no(level_no) { }
 
   ~InternalLevel() = default;
 
@@ -197,6 +199,10 @@ public:
       new_level->append(m_shards[i].first, m_shards[i].second);
     }
 
+    for (auto itr=m_rt_window.begin(); itr < m_rt_window.end(); itr++) {
+      new_level->m_rt_window.push_front(*itr);
+    }
+
     return new_level;
   }
 
@@ -234,16 +240,33 @@ public:
   }
 
   long predict_reconstruction_time(size_t reccnt) {
-    return 0;
+    if (m_rt_window.size() == 0) {
+      return 0;
+    }
+
+    size_t total = 0;
+    for (auto rt : m_rt_window) {
+      total += rt;
+    }    
+
+    return total / m_rt_window.size();
   }
 
   void update_reconstruction_model(reconstruction_results<ShardType> &recon) {
-    
+    if (m_rt_window.size() >= m_window_size) {
+      m_rt_window.pop_back();
+    }
+
+    m_rt_window.push_front(recon.runtime);
   }
 
 private:
   ssize_t m_level_no;
   std::vector<shard_ptr> m_shards;
+
+  const size_t m_window_size = 15;
+
+  std::deque<size_t> m_rt_window;
 };
 
 } // namespace de
