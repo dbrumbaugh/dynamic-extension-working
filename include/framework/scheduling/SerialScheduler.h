@@ -37,7 +37,8 @@ public:
     t(0);
   }
 
-  void shutdown() { /* intentionally left blank */ }
+  void shutdown() { /* intentionally left blank */
+  }
 
   void print_statistics() { m_stats.print_statistics(); }
   void print_query_time_data() { m_stats.print_query_time_data(); }

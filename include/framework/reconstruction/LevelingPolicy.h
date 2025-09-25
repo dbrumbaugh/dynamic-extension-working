@@ -58,8 +58,9 @@ public:
         (target_level == 1)
             ? m_buffer_size + target_reccnt
             : levels[target_level - 1]->get_record_count() + target_reccnt;
-    auto type = (target_level >= (level_index) levels.size()) ? ReconstructionType::Append
-                                                : ReconstructionType::Merge;
+    auto type = (target_level >= (level_index)levels.size())
+                    ? ReconstructionType::Append
+                    : ReconstructionType::Merge;
     reconstructions.add_reconstruction(target_level - 1, target_level,
                                        total_reccnt, type);
 
@@ -95,8 +96,9 @@ private:
 
   inline size_t capacity(level_index level, size_t reccnt) const {
     return m_buffer_size *
-           pow(m_scale_factor * std::ceil(std::pow<double>(std::log10(reccnt), m_size_modifier)), level);
-
+           pow(m_scale_factor * std::ceil(std::pow<double>(std::log10(reccnt),
+                                                           m_size_modifier)),
+               level);
   }
 
   size_t m_scale_factor;

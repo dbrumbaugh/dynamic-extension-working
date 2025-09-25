@@ -40,8 +40,8 @@ public:
     size_t record_count;
     size_t tombstone_count;
 
-    bool is_deleted() {return false;}
-    bool is_tombstone() {return false;}
+    bool is_deleted() { return false; }
+    bool is_tombstone() { return false; }
   };
 
   typedef size_t ResultType;
@@ -116,8 +116,7 @@ public:
     return result;
   }
 
-  static LocalResultType
-  local_query_buffer(LocalQueryBuffer *query) {
+  static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
 
     LocalResultType result = {0, 0};
     for (size_t i = 0; i < query->buffer->get_record_count(); i++) {
@@ -137,9 +136,8 @@ public:
     return result;
   }
 
-  static void
-  combine(std::vector<LocalResultType> const &local_results,
-          Parameters *parms, ResultType &output) {
+  static void combine(std::vector<LocalResultType> const &local_results,
+                      Parameters *parms, ResultType &output) {
     size_t reccnt = 0;
     size_t tscnt = 0;
 

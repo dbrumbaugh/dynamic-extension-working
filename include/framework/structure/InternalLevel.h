@@ -15,11 +15,11 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <deque>
 #include <future>
 #include <memory>
 #include <vector>
-#include <deque>
-#include <algorithm>
 
 #include "framework/interface/Query.h"
 #include "framework/interface/Shard.h"
@@ -34,7 +34,7 @@ class InternalLevel {
   typedef std::pair<std::shared_ptr<ShardType>, size_t> shard_ptr;
 
 public:
-  InternalLevel(ssize_t level_no) : m_level_no(level_no) { }
+  InternalLevel(ssize_t level_no) : m_level_no(level_no) {}
 
   ~InternalLevel() = default;
 
@@ -109,7 +109,7 @@ public:
       idx = 0;
     }
 
-    if (idx >= (ssize_t) m_shards.size()) {
+    if (idx >= (ssize_t)m_shards.size()) {
       return nullptr;
     }
 
@@ -183,7 +183,7 @@ public:
   }
 
   size_t get_nonempty_shard_count() const {
-        size_t cnt = 0;
+    size_t cnt = 0;
     for (size_t i = 0; i < m_shards.size(); i++) {
       if (m_shards[i].first && m_shards[i].first->get_record_count() > 0) {
         cnt += 1;
@@ -199,7 +199,7 @@ public:
       new_level->append(m_shards[i].first, m_shards[i].second);
     }
 
-    for (auto itr=m_rt_window.begin(); itr < m_rt_window.end(); itr++) {
+    for (auto itr = m_rt_window.begin(); itr < m_rt_window.end(); itr++) {
       new_level->m_rt_window.push_front(*itr);
     }
 
@@ -208,23 +208,21 @@ public:
 
   void truncate() { m_shards.erase(m_shards.begin(), m_shards.end()); }
 
-  void delete_shard(shard_index shard, bool log_delete=true) {
+  void delete_shard(shard_index shard, bool log_delete = true) {
     size_t before = m_shards.size();
     m_shards.erase(m_shards.begin() + shard);
     size_t after = m_shards.size();
-    assert( before > after);
+    assert(before > after);
   }
 
-  void append(std::shared_ptr<ShardType> shard, size_t version=0) {
+  void append(std::shared_ptr<ShardType> shard, size_t version = 0) {
     m_shards.push_back({shard, version});
   }
 
-  void append(shard_ptr shard) {
-    m_shards.push_back(shard);
-  }
+  void append(shard_ptr shard) { m_shards.push_back(shard); }
 
   const shard_ptr get_shard_ptr(ssize_t idx) const {
-    if (idx >= 0 && idx < (ssize_t) m_shards.size()) {
+    if (idx >= 0 && idx < (ssize_t)m_shards.size()) {
       return m_shards[idx];
     } else if (idx == all_shards_idx && m_shards.size() == 1) {
       return m_shards[0];
@@ -247,7 +245,7 @@ public:
     size_t total = 0;
     for (auto rt : m_rt_window) {
       total += rt;
-    }    
+    }
 
     return total / m_rt_window.size();
   }

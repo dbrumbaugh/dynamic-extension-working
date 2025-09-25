@@ -64,7 +64,7 @@ public:
     if (query->lower_idx == shard->get_record_count()) {
       query->total_weight = 0;
     } else {
-      query->total_weight = query->upper_idx - query->lower_idx; 
+      query->total_weight = query->upper_idx - query->lower_idx;
     }
 
     query->sample_size = 0;
@@ -192,8 +192,7 @@ public:
     return result_set;
   }
 
-  static LocalResultType
-  local_query_buffer(LocalQueryBuffer *query) {
+  static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
     LocalResultType result;
     result.reserve(query->sample_size);
 
@@ -221,9 +220,8 @@ public:
     return result;
   }
 
-  static void
-  combine(std::vector<LocalResultType> const &local_results,
-          Parameters *parms, ResultType &output) {
+  static void combine(std::vector<LocalResultType> const &local_results,
+                      Parameters *parms, ResultType &output) {
     for (size_t i = 0; i < local_results.size(); i++) {
       for (size_t j = 0; j < local_results[i].size(); j++) {
         output.emplace_back(local_results[i][j]);

@@ -1,7 +1,7 @@
 /*
  * include/framework/ShardRequirements.h
  *
- * Copyright (C) 2023 Douglas B. Rumbaugh <drumbaugh@psu.edu> 
+ * Copyright (C) 2023 Douglas B. Rumbaugh <drumbaugh@psu.edu>
  *
  * Distributed under the Modified BSD License.
  *
@@ -11,7 +11,7 @@
  */
 #pragma once
 
-#include "framework/structure/BufferView.h"
+#include "framework/interface/Query.h"
 #include "framework/interface/Record.h"
 #include "framework/interface/Shard.h"
-#include "framework/interface/Query.h"
+#include "framework/structure/BufferView.h"

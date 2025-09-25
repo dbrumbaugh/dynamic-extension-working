@@ -61,7 +61,8 @@ public:
 
     std::unique_lock<std::mutex> lk(m_cv_lock);
     m_stats.job_queued(ts, type, size);
-    m_task_queue.push(Task(size, ts, job, args, type, &m_stats, nullptr, &m_cv));
+    m_task_queue.push(
+        Task(size, ts, job, args, type, &m_stats, nullptr, &m_cv));
 
     m_cv.notify_all();
   }
@@ -80,7 +81,6 @@ private:
 
   [[maybe_unused]] size_t m_memory_budget;
   size_t m_thrd_cnt;
-
 
   std::atomic<size_t> m_counter;
   std::mutex m_cv_lock;

@@ -121,7 +121,9 @@ public:
 
   size_t get_memory_usage() const { return m_internal_node_cnt * NODE_SZ; }
 
-  size_t get_aux_memory_usage() const { return (m_bf) ? m_bf->memory_usage() : 0; }
+  size_t get_aux_memory_usage() const {
+    return (m_bf) ? m_bf->memory_usage() : 0;
+  }
 
   /* SortedShardInterface methods */
   size_t get_lower_bound(const K &key) const {

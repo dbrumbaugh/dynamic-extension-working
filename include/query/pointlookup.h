@@ -40,7 +40,7 @@ public:
 
   typedef std::vector<Wrapped<R>> LocalResultType;
   typedef std::vector<R> ResultType;
-    
+
   constexpr static bool EARLY_ABORT = false;
   constexpr static bool SKIP_DELETE_FILTER = true;
 
@@ -58,7 +58,7 @@ public:
 
     return query;
   }
-  
+
   static void distribute_query(Parameters *parms,
                                std::vector<LocalQuery *> const &local_queries,
                                LocalQueryBuffer *buffer_query) {
@@ -76,7 +76,7 @@ public:
 
     return result;
   }
-  
+
   static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
     LocalResultType result;
 
@@ -91,11 +91,9 @@ public:
 
     return result;
   }
-  
 
-  static void
-  combine(std::vector<LocalResultType> const &local_results,
-          Parameters *parms, ResultType &output) {
+  static void combine(std::vector<LocalResultType> const &local_results,
+                      Parameters *parms, ResultType &output) {
     for (auto r : local_results) {
       if (r.size() > 0) {
         if (r[0].is_deleted() || r[0].is_tombstone()) {
@@ -107,7 +105,7 @@ public:
       }
     }
   }
-    
+
   static bool repeat(Parameters *parms, ResultType &output,
                      std::vector<LocalQuery *> const &local_queries,
                      LocalQueryBuffer *buffer_query) {

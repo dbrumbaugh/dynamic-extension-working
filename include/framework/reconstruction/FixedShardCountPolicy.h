@@ -16,16 +16,20 @@
 
 namespace de {
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
-class FixedShardCountPolicy : public ReconstructionPolicy<ShardType, QueryType> {
+class FixedShardCountPolicy
+    : public ReconstructionPolicy<ShardType, QueryType> {
   typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>>
       LevelVector;
 
 public:
-  FixedShardCountPolicy(size_t buffer_size, size_t shard_count, size_t max_record_count) 
-  : m_buffer_size(buffer_size), m_shard_count(shard_count), m_max_reccnt(max_record_count) {}
+  FixedShardCountPolicy(size_t buffer_size, size_t shard_count,
+                        size_t max_record_count)
+      : m_buffer_size(buffer_size), m_shard_count(shard_count),
+        m_max_reccnt(max_record_count) {}
 
   std::vector<ReconstructionVector>
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
+                           LockManager &lock_mngr) const override {
     return {};
   }
 
@@ -37,26 +41,26 @@ public:
 
     /* if this is the very first flush, there won't be an L1 yet */
     if (levels.size() > 1 && levels[1]->get_shard_count() > 0) {
-      ShardID last_shid = {1, (shard_index) (levels[1]->get_shard_count() - 1)};
-      if (levels[1]->get_shard(last_shid.shard_idx)->get_record_count() + m_buffer_size <= capacity()) {
-        auto task = ReconstructionTask {
-          {{0, 0}, last_shid}, 1, m_buffer_size,ReconstructionType::Merge
-        };
+      ShardID last_shid = {1, (shard_index)(levels[1]->get_shard_count() - 1)};
+      if (levels[1]->get_shard(last_shid.shard_idx)->get_record_count() +
+              m_buffer_size <=
+          capacity()) {
+        auto task = ReconstructionTask{
+            {{0, 0}, last_shid}, 1, m_buffer_size, ReconstructionType::Merge};
         v.add_reconstruction(task);
         return v;
       }
     }
 
-    auto task = ReconstructionTask {
-      {{0, 0}}, 1, m_buffer_size, ReconstructionType::Append
-    };
+    auto task = ReconstructionTask{
+        {{0, 0}}, 1, m_buffer_size, ReconstructionType::Append};
     v.add_reconstruction(task);
     return v;
   }
 
 private:
   inline size_t capacity() const {
-    double bps = (double) m_max_reccnt / (double) m_buffer_size / m_shard_count;
+    double bps = (double)m_max_reccnt / (double)m_buffer_size / m_shard_count;
     return ceil(bps) * m_buffer_size;
   }
 

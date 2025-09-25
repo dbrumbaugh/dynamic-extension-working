@@ -36,7 +36,8 @@ public:
     ReconstructionVector reconstructions;
     auto levels = version->get_structure()->get_level_vector();
 
-    level_index target_level = find_reconstruction_target(levels, version->get_structure()->get_record_count());
+    level_index target_level = find_reconstruction_target(
+        levels, version->get_structure()->get_record_count());
     assert(target_level != -1);
     level_index source_level = 0;
 
@@ -49,7 +50,8 @@ public:
     task.target = target_level;
 
     size_t reccnt = 0;
-    if (target_level < (ssize_t)levels.size() && levels[target_level]->get_record_count() > 0) {
+    if (target_level < (ssize_t)levels.size() &&
+        levels[target_level]->get_record_count() > 0) {
       task.sources.push_back({target_level, all_shards_idx});
       task.type = ReconstructionType::Merge;
     } else {
@@ -71,7 +73,8 @@ public:
   }
 
 private:
-  level_index find_reconstruction_target(LevelVector &levels, size_t reccnt) const {
+  level_index find_reconstruction_target(LevelVector &levels,
+                                         size_t reccnt) const {
     level_index target_level = invalid_level_idx;
 
     for (level_index i = 1; i < (level_index)levels.size(); i++) {
@@ -85,7 +88,8 @@ private:
   }
 
   inline size_t capacity(level_index level, size_t reccnt) const {
-    double base = std::ceil(m_scale_factor * std::pow<double>(std::log10(reccnt), m_size_modifier));
+    double base = std::ceil(
+        m_scale_factor * std::pow<double>(std::log10(reccnt), m_size_modifier));
     return m_buffer_size * (base - 1) * pow(base, level + 1);
   }
 

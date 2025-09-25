@@ -27,12 +27,14 @@ class ExtensionStructure {
   typedef BufferView<RecordType> BuffView;
   typedef std::vector<std::shared_ptr<InternalLevel<ShardType, QueryType>>>
       LevelVector;
+
 public:
-  ExtensionStructure(bool default_level=true) {
+  ExtensionStructure(bool default_level = true) {
     if (default_level)
-      m_levels.emplace_back(std::make_shared<InternalLevel<ShardType, QueryType>>(0));
+      m_levels.emplace_back(
+          std::make_shared<InternalLevel<ShardType, QueryType>>(0));
   }
-  
+
   ~ExtensionStructure() = default;
 
   /*
@@ -162,34 +164,37 @@ public:
     return cnt;
   }
 
-
   /*
    * Perform the reconstruction described by task. If the resulting
    * reconstruction grows the structure (i.e., adds a level), returns
    * true. Otherwise, returns false.
    */
-  inline reconstruction_results<ShardType> perform_reconstruction(ReconstructionTask task) const { 
+  inline reconstruction_results<ShardType>
+  perform_reconstruction(ReconstructionTask task) const {
     reconstruction_results<ShardType> result;
     result.target_level = task.target;
 
     /* if there is only one source, then we don't need to actually rebuild */
     if (task.sources.size() == 1) {
       auto shid = task.sources[0];
-      if (shid.shard_idx == all_shards_idx && m_levels[shid.level_idx]->get_shard_count() > 1) {
+      if (shid.shard_idx == all_shards_idx &&
+          m_levels[shid.level_idx]->get_shard_count() > 1) {
         /* there's more than one shard, so we need to do the reconstruction */
       } else {
-        auto raw_shard_ptr = m_levels[shid.level_idx]->get_shard(shid.shard_idx);
+        auto raw_shard_ptr =
+            m_levels[shid.level_idx]->get_shard(shid.shard_idx);
         assert(raw_shard_ptr);
         result.source_shards.emplace_back(shid.level_idx, raw_shard_ptr);
-        result.new_shard = m_levels[shid.level_idx]->get_shard_ptr(shid.shard_idx).first;
+        result.new_shard =
+            m_levels[shid.level_idx]->get_shard_ptr(shid.shard_idx).first;
 
         return result;
       }
     }
-        
-    std::vector<const ShardType*> shards;
+
+    std::vector<const ShardType *> shards;
     for (ShardID shid : task.sources) {
-      assert(shid.level_idx < (level_index) m_levels.size());
+      assert(shid.level_idx < (level_index)m_levels.size());
       assert(shid.shard_idx >= -1);
 
       auto raw_shard_ptr = m_levels[shid.level_idx]->get_shard(shid.shard_idx);
@@ -197,12 +202,13 @@ public:
       result.source_shards.emplace_back(shid.level_idx, raw_shard_ptr);
     }
 
-
     auto start = std::chrono::high_resolution_clock::now();
     result.new_shard = std::make_shared<ShardType>(shards);
     auto stop = std::chrono::high_resolution_clock::now();
 
-    result.runtime =  std::chrono::duration_cast<std::chrono::nanoseconds>(stop- start).count();
+    result.runtime =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start)
+            .count();
     result.reccnt = result.new_shard->get_record_count();
 
     return result;
@@ -221,11 +227,10 @@ public:
     return queries;
   }
 
-  size_t l0_size() const {
-    return m_levels[0]->get_shard_count();
-  }
+  size_t l0_size() const { return m_levels[0]->get_shard_count(); }
 
-  bool apply_reconstruction(reconstruction_results<ShardType> &recon, size_t version) {
+  bool apply_reconstruction(reconstruction_results<ShardType> &recon,
+                            size_t version) {
     bool res = append_shard(recon.new_shard, version, recon.target_level);
     m_levels[recon.target_level]->update_reconstruction_model(recon);
     delete_shards(recon.source_shards);
@@ -233,13 +238,15 @@ public:
     return res;
   }
 
-  bool append_shard(std::shared_ptr<ShardType> shard, size_t version, size_t level) {
+  bool append_shard(std::shared_ptr<ShardType> shard, size_t version,
+                    size_t level) {
     assert(level <= m_levels.size());
     auto rc = false;
 
     if (level == m_levels.size()) {
       /* grow the structure */
-      m_levels.push_back(std::make_shared<InternalLevel<ShardType, QueryType>>(level));
+      m_levels.push_back(
+          std::make_shared<InternalLevel<ShardType, QueryType>>(level));
       rc = true;
     }
 
@@ -248,12 +255,15 @@ public:
     return rc;
   }
 
-  void delete_shards(std::vector<std::pair<level_index, const ShardType*>> shards) {
-    for (size_t i=0; i<shards.size(); i++) {
-      assert(shards[i].first < (level_index) m_levels.size());
+  void
+  delete_shards(std::vector<std::pair<level_index, const ShardType *>> shards) {
+    for (size_t i = 0; i < shards.size(); i++) {
+      assert(shards[i].first < (level_index)m_levels.size());
       ssize_t shard_idx = -1;
-      for (size_t j=0; j<m_levels[shards[i].first]->get_shard_count(); j++) {
-        if (m_levels[shards[i].first]->get_shard_ptr(j).first.get() == shards[i].second) {
+      for (size_t j = 0; j < m_levels[shards[i].first]->get_shard_count();
+           j++) {
+        if (m_levels[shards[i].first]->get_shard_ptr(j).first.get() ==
+            shards[i].second) {
           shard_idx = j;
           break;
         }
@@ -262,7 +272,8 @@ public:
       if (shard_idx != -1) {
         m_levels[shards[i].first]->delete_shard(shard_idx);
       } else {
-        fprintf(stderr, "ERROR: failed to delete shard %ld\t%p\n", shards[i].first, shards[i].second);
+        fprintf(stderr, "ERROR: failed to delete shard %ld\t%p\n",
+                shards[i].first, shards[i].second);
         exit(EXIT_FAILURE);
       }
     }
@@ -270,51 +281,55 @@ public:
 
   LevelVector const &get_level_vector() const { return m_levels; }
 
-  
-    /*
-     * Validate that no level in the structure exceeds its maximum tombstone
-     * capacity. This is used to trigger preemptive compactions at the end of
-     * the reconstruction process.
-     */
-    bool validate_tombstone_proportion(double max_delete_prop) const {
-      long double ts_prop;
-      for (size_t i = 0; i < m_levels.size(); i++) {
-        if (m_levels[i]) {
-          ts_prop = (long double)m_levels[i]->get_tombstone_count() /
-                    (long double)m_levels[i]->get_record_count();
-          if (ts_prop > (long double)max_delete_prop) {
-            return false;
-          }
+  /*
+   * Validate that no level in the structure exceeds its maximum tombstone
+   * capacity. This is used to trigger preemptive compactions at the end of
+   * the reconstruction process.
+   */
+  bool validate_tombstone_proportion(double max_delete_prop) const {
+    long double ts_prop;
+    for (size_t i = 0; i < m_levels.size(); i++) {
+      if (m_levels[i]) {
+        ts_prop = (long double)m_levels[i]->get_tombstone_count() /
+                  (long double)m_levels[i]->get_record_count();
+        if (ts_prop > (long double)max_delete_prop) {
+          return false;
         }
       }
-
-      return true;
     }
 
-    bool validate_tombstone_proportion(level_index level, double max_delete_prop) const {
-        long double ts_prop =  (long double) m_levels[level]->get_tombstone_count() / (long double) m_levels[level]->get_record_count();
-        return ts_prop <= (long double) max_delete_prop;
-    }
+    return true;
+  }
 
-    void print_structure(bool debug=false) const {
-      for (size_t i=0; i<m_levels.size(); i++) {
-        if (debug) {
-          fprintf(stdout, "[D] [%ld]:\t", i);
-        } else {
-          fprintf(stdout, "[%ld]:\t",  i);
-        }
+  bool validate_tombstone_proportion(level_index level,
+                                     double max_delete_prop) const {
+    long double ts_prop = (long double)m_levels[level]->get_tombstone_count() /
+                          (long double)m_levels[level]->get_record_count();
+    return ts_prop <= (long double)max_delete_prop;
+  }
 
-        if (m_levels[i]) {
-          for (size_t j=0; j<m_levels[i]->get_shard_count(); j++) {
-            fprintf(stdout, "(%ld, %ld, %p: %ld) ", j, m_levels[i]->get_shard_ptr(j).second, m_levels[i]->get_shard_ptr(j).first.get(), m_levels[i]->get_shard(j)->get_record_count()); 
-          }
-        } else {
-          fprintf(stdout, "[Empty]");
-        }
-
-        fprintf(stdout, "\n");
+  void print_structure(bool debug = false) const {
+    for (size_t i = 0; i < m_levels.size(); i++) {
+      if (debug) {
+        fprintf(stdout, "[D] [%ld]:\t", i);
+      } else {
+        fprintf(stdout, "[%ld]:\t", i);
       }
-    }    
+
+      if (m_levels[i]) {
+        for (size_t j = 0; j < m_levels[i]->get_shard_count(); j++) {
+          fprintf(stdout, "(%ld, %ld, %p: %ld) ", j,
+                  m_levels[i]->get_shard_ptr(j).second,
+                  m_levels[i]->get_shard_ptr(j).first.get(),
+                  m_levels[i]->get_shard(j)->get_record_count());
+        }
+      } else {
+        fprintf(stdout, "[Empty]");
+      }
+
+      fprintf(stdout, "\n");
+    }
+  }
 
 private:
   LevelVector m_levels;

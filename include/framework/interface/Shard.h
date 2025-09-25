@@ -14,8 +14,8 @@ namespace de {
 
 template <typename SHARD>
 concept ShardInterface = RecordInterface<typename SHARD::RECORD> &&
-    requires(SHARD shard, const std::vector<const SHARD *> &shard_vector, bool b,
-             BufferView<typename SHARD::RECORD> bv,
+    requires(SHARD shard, const std::vector<const SHARD *> &shard_vector,
+             bool b, BufferView<typename SHARD::RECORD> bv,
              typename SHARD::RECORD rec) {
   /* construct a shard from a vector of shards of the same type */
   {SHARD(shard_vector)};
@@ -52,7 +52,6 @@ concept ShardInterface = RecordInterface<typename SHARD::RECORD> &&
    * use only at the moment
    */
   { shard.get_aux_memory_usage() } -> std::convertible_to<size_t>;
-
 };
 
 template <typename SHARD>

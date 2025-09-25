@@ -60,7 +60,9 @@ public:
 
   Structure *get_mutable_structure() { return m_structure; }
 
-  BufView get_buffer() const { return m_buffer->get_buffer_view(m_buffer_head); }
+  BufView get_buffer() const {
+    return m_buffer->get_buffer_view(m_buffer_head);
+  }
 
   /*
    * Returns a new Epoch object that is a copy of this one. The new object

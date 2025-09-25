@@ -139,7 +139,8 @@ public:
 
     for (size_t i = 0; i < query->sample_size; i++) {
       size_t idx = shard->get_weighted_sample(query->global_parms.rng);
-      if (!shard->get_record_at(idx)->is_deleted() && !shard->get_record_at(idx)->is_tombstone()) {
+      if (!shard->get_record_at(idx)->is_deleted() &&
+          !shard->get_record_at(idx)->is_tombstone()) {
         result.emplace_back(shard->get_record_at(idx)->rec);
       }
     }
@@ -147,8 +148,7 @@ public:
     return result;
   }
 
-  static LocalResultType
-  local_query_buffer(LocalQueryBuffer *query) {
+  static LocalResultType local_query_buffer(LocalQueryBuffer *query) {
     LocalResultType result;
 
     for (size_t i = 0; i < query->sample_size; i++) {
@@ -156,7 +156,8 @@ public:
       auto rec = query->buffer->get(idx);
 
       auto test = gsl_rng_uniform(query->global_parms.rng) * query->max_weight;
-      if (test <= rec->rec.weight && !rec->is_deleted() && !rec->is_tombstone()) {
+      if (test <= rec->rec.weight && !rec->is_deleted() &&
+          !rec->is_tombstone()) {
         result.emplace_back(rec->rec);
       }
     }
@@ -164,9 +165,8 @@ public:
     return result;
   }
 
-  static void
-  combine(std::vector<LocalResultType> const &local_results,
-          Parameters *parms, ResultType &output) {
+  static void combine(std::vector<LocalResultType> const &local_results,
+                      Parameters *parms, ResultType &output) {
     for (size_t i = 0; i < local_results.size(); i++) {
       for (size_t j = 0; j < local_results[i].size(); j++) {
         output.emplace_back(local_results[i][j]);

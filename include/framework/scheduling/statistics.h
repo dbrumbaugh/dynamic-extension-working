@@ -16,12 +16,12 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
-#include <cmath>
 
 namespace de {
 
@@ -68,7 +68,6 @@ private:
                                                                   queue_time)
           .count();
     }
-    
   };
 
 public:
@@ -117,10 +116,10 @@ public:
     size_t worst_query = 0;
     size_t first_query = UINT64_MAX;
 
-
     for (auto &job : m_jobs) {
       if (job.second.type != 1) {
-        fprintf(stdout, "%ld %ld %ld %ld\n", job.second.id, job.second.size, job.second.runtime(), job.second.runtime() / (job.second.size));
+        fprintf(stdout, "%ld %ld %ld %ld\n", job.second.id, job.second.size,
+                job.second.runtime(), job.second.runtime() / (job.second.size));
       }
 
       if (job.first < first_query) {
@@ -149,7 +148,6 @@ public:
 
       query_cnt++;
     }
-    
 
     int64_t average_queue_time = (query_cnt) ? total_queue_time / query_cnt : 0;
     int64_t average_runtime = (query_cnt) ? total_runtime / query_cnt : 0;
@@ -162,20 +160,28 @@ public:
         continue;
       }
 
-      queue_deviation_sum += std::pow(job.second.time_in_queue() - average_queue_time, 2);
-      runtime_deviation_sum +=  std::pow(job.second.runtime() - average_runtime, 2);
-      
+      queue_deviation_sum +=
+          std::pow(job.second.time_in_queue() - average_queue_time, 2);
+      runtime_deviation_sum +=
+          std::pow(job.second.runtime() - average_runtime, 2);
     }
 
-    int64_t queue_stddev = (query_cnt) ? std::sqrt(queue_deviation_sum / query_cnt) : 0;
-    int64_t runtime_stddev = (query_cnt) ? std::sqrt(runtime_deviation_sum / query_cnt) : 0;
-    
+    int64_t queue_stddev =
+        (query_cnt) ? std::sqrt(queue_deviation_sum / query_cnt) : 0;
+    int64_t runtime_stddev =
+        (query_cnt) ? std::sqrt(runtime_deviation_sum / query_cnt) : 0;
 
-    fprintf(stdout, "Query Count: %ld\tWorst Query: %ld\tFirst Query: %ld\n", query_cnt, worst_query, first_query);
-    fprintf(stdout, "Average Query Scheduling Delay: %ld\t Min Scheduling Delay: %ld\t Max Scheduling Delay: %ld\tStandard Deviation: %ld\n", average_queue_time, min_queue_time, max_queue_time, queue_stddev);
-    fprintf(stdout, "Average Query Latency: %ld\t\t Min Query Latency: %ld\t Max Query Latency: %ld\tStandard Deviation: %ld\n", average_runtime, min_runtime, max_runtime, runtime_stddev);
+    fprintf(stdout, "Query Count: %ld\tWorst Query: %ld\tFirst Query: %ld\n",
+            query_cnt, worst_query, first_query);
+    fprintf(stdout,
+            "Average Query Scheduling Delay: %ld\t Min Scheduling Delay: %ld\t "
+            "Max Scheduling Delay: %ld\tStandard Deviation: %ld\n",
+            average_queue_time, min_queue_time, max_queue_time, queue_stddev);
+    fprintf(stdout,
+            "Average Query Latency: %ld\t\t Min Query Latency: %ld\t Max Query "
+            "Latency: %ld\tStandard Deviation: %ld\n",
+            average_runtime, min_runtime, max_runtime, runtime_stddev);
   }
-
 
   void print_query_time_data() {
     std::unique_lock<std::mutex> lk(m_mutex);
@@ -183,7 +189,8 @@ public:
 
     for (auto &job : m_jobs) {
       if (job.second.type == 1) {
-        fprintf(stdout, "%ld\t%ld\t%ld\n", job.second.time_in_queue(), job.second.runtime(), job.second.end_to_end_time());
+        fprintf(stdout, "%ld\t%ld\t%ld\n", job.second.time_in_queue(),
+                job.second.runtime(), job.second.end_to_end_time());
       }
     }
   }
@@ -211,18 +218,18 @@ private:
 
       auto &job = m_jobs.at(event.id);
       switch (event.type) {
-        case EventType::QUEUED:
-          job.queue_time = event.time;
-          break;
-        case EventType::FINISHED:
-          job.stop_time = event.time;
-          break;
-        case EventType::SCHEDULED:
-          job.scheduled_time = event.time;
-          break;
-        case EventType::STARTED:
-          job.start_time = event.time;
-          break;
+      case EventType::QUEUED:
+        job.queue_time = event.time;
+        break;
+      case EventType::FINISHED:
+        job.stop_time = event.time;
+        break;
+      case EventType::SCHEDULED:
+        job.scheduled_time = event.time;
+        break;
+      case EventType::STARTED:
+        job.start_time = event.time;
+        break;
       }
     }
 

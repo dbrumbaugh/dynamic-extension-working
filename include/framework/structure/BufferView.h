@@ -46,10 +46,9 @@ public:
 
   BufferView(Wrapped<R> *buffer, size_t cap, size_t head, size_t tail,
              size_t tombstone_cnt, psudb::BloomFilter<R> *filter)
-      : m_data(buffer), m_head(head), m_tail(tail),
-        m_start(m_head % cap), m_stop(m_tail % cap), m_cap(cap),
-        m_approx_ts_cnt(tombstone_cnt), m_tombstone_filter(filter),
-        m_active(true) {}
+      : m_data(buffer), m_head(head), m_tail(tail), m_start(m_head % cap),
+        m_stop(m_tail % cap), m_cap(cap), m_approx_ts_cnt(tombstone_cnt),
+        m_tombstone_filter(filter), m_active(true) {}
 
   ~BufferView() = default;
 
@@ -104,9 +103,7 @@ public:
    */
   size_t get_tombstone_count() { return m_approx_ts_cnt; }
 
-  Wrapped<R> *get(size_t i) {
-    return m_data + to_idx(i);
-  }
+  Wrapped<R> *get(size_t i) { return m_data + to_idx(i); }
 
   void copy_to_buffer(psudb::byte *buffer) {
     /* check if the region to be copied circles back to start. If so, do it in

@@ -20,8 +20,8 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace de {
 
@@ -76,21 +76,18 @@ constexpr ShardID buffer_shid = {buffer_level_idx, all_shards_idx};
 
 enum class ReconstructionType {
   Invalid, /* placeholder type */
-  Flush, /* a flush of the buffer into L0 */
-  Merge, /* the merging of shards in two seperate levels */
-  Append, /* adding a shard directly to a level */
-  Compact /* the merging of shards on one level */
+  Flush,   /* a flush of the buffer into L0 */
+  Merge,   /* the merging of shards in two seperate levels */
+  Append,  /* adding a shard directly to a level */
+  Compact  /* the merging of shards on one level */
 };
 
-
-template <typename ShardType>
-struct reconstruction_results {
+template <typename ShardType> struct reconstruction_results {
   std::shared_ptr<ShardType> new_shard;
   std::vector<std::pair<level_index, const ShardType *>> source_shards;
   size_t target_level;
   size_t reccnt;
   long runtime;
-  
 };
 
 typedef struct ReconstructionTask {
@@ -121,11 +118,14 @@ public:
     total_reccnt += reccnt;
   }
 
-  void add_reconstruction(level_index source, level_index target,
-                          size_t reccnt, ReconstructionType type) {
+  void add_reconstruction(level_index source, level_index target, size_t reccnt,
+                          ReconstructionType type) {
 
     if (type == ReconstructionType::Merge) {
-      m_tasks.push_back({{{source, all_shards_idx}, {target, all_shards_idx}}, target, reccnt, type});
+      m_tasks.push_back({{{source, all_shards_idx}, {target, all_shards_idx}},
+                         target,
+                         reccnt,
+                         type});
     } else {
       m_tasks.push_back({{{source, all_shards_idx}}, target, reccnt, type});
     }

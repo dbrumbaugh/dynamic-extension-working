@@ -3,15 +3,15 @@
  */
 
 #pragma once
-#include <deque>
 #include <atomic>
 #include <cassert>
+#include <deque>
 
 namespace de {
 class LockManager {
 public:
-  LockManager(size_t levels=1) {
-    for (size_t i=0; i < levels; i++) {
+  LockManager(size_t levels = 1) {
+    for (size_t i = 0; i < levels; i++) {
       m_lks.emplace_back(false);
     }
 
@@ -20,9 +20,7 @@ public:
 
   ~LockManager() = default;
 
-  void add_lock() {
-    m_lks.emplace_back(false);
-  }
+  void add_lock() { m_lks.emplace_back(false); }
 
   void release_lock(size_t idx, size_t version) {
     if (idx < m_lks.size()) {
@@ -72,17 +70,13 @@ public:
     return false;
   }
 
-  bool is_buffer_locked() {
-    return m_buffer_lk.load();
-  }
+  bool is_buffer_locked() { return m_buffer_lk.load(); }
 
-  void release_buffer_lock() {
-    m_buffer_lk.store(false);
-  }
+  void release_buffer_lock() { m_buffer_lk.store(false); }
 
 private:
   std::deque<std::atomic<bool>> m_lks;
   std::atomic<bool> m_buffer_lk;
   std::atomic<size_t> m_last_unlocked_version;
 };
-}
+} // namespace de

@@ -97,7 +97,9 @@ public:
     return true;
   }
 
-  size_t get_record_count() const { return m_tail.load() - m_head.load().head_idx; }
+  size_t get_record_count() const {
+    return m_tail.load() - m_head.load().head_idx;
+  }
 
   size_t get_capacity() const { return m_cap; }
 
@@ -139,14 +141,16 @@ public:
     m_active_head_advance.store(true);
 
     if (m_old_head.load().refcnt > 0) {
-      //fprintf(stderr, "[W]: Refusing to advance head due to remaining reference counts [2]\n");
+      // fprintf(stderr, "[W]: Refusing to advance head due to remaining
+      // reference counts [2]\n");
       m_active_head_advance.store(false);
       return false;
     }
 
-    // fprintf(stderr, "[I] Advancing head pointer: %ld %ld %ld\n", m_old_head.load().head_idx, m_head.load().head_idx, new_head);
-    // fprintf(stderr, "[I] Refcnts: %ld %ld\n", m_old_head.load().refcnt, m_head.load().refcnt);
-    
+    // fprintf(stderr, "[I] Advancing head pointer: %ld %ld %ld\n",
+    // m_old_head.load().head_idx, m_head.load().head_idx, new_head);
+    // fprintf(stderr, "[I] Refcnts: %ld %ld\n", m_old_head.load().refcnt,
+    // m_head.load().refcnt);
 
     buffer_head new_hd = {new_head, 1};
     buffer_head cur_hd;
@@ -162,7 +166,6 @@ public:
     m_active_head_advance.store(false);
     return true;
   }
-
 
   void set_low_watermark(size_t lwm) {
     assert(lwm < m_hwm);
@@ -197,13 +200,9 @@ public:
     return m_cap - (m_tail.load() - m_old_head.load().head_idx);
   }
 
-  size_t debug_get_old_head() const {
-    return m_old_head.load().head_idx;
-  }
+  size_t debug_get_old_head() const { return m_old_head.load().head_idx; }
 
-  size_t debug_get_head() const {
-    return m_head.load().head_idx;
-  }
+  size_t debug_get_head() const { return m_head.load().head_idx; }
 
   bool take_head_reference(size_t target_head) {
     buffer_head cur_hd, new_hd;
@@ -225,7 +224,7 @@ public:
 
     return head_acquired;
   }
-  
+
   bool release_head_reference(size_t head) {
     buffer_head cur_hd, new_hd;
     bool head_released = false;
@@ -261,8 +260,8 @@ private:
     buffer_head cur_hd, new_hd;
     bool head_acquired = false;
 
-
-    //fprintf(stderr, "[I]: getting head %ld %ld %ld\n", target_head, m_old_head.load().head_idx, m_head.load().head_idx);
+    // fprintf(stderr, "[I]: getting head %ld %ld %ld\n", target_head,
+    // m_old_head.load().head_idx, m_head.load().head_idx);
     do {
       if (m_old_head.load().head_idx == target_head) {
         cur_hd = m_old_head.load();
@@ -279,7 +278,7 @@ private:
 
     return new_hd.head_idx;
   }
-  
+
   ssize_t try_advance_tail() {
     size_t old_value = m_tail.load();
 

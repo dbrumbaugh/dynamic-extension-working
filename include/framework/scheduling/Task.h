@@ -14,9 +14,9 @@
 #pragma once
 
 #include <chrono>
+#include <condition_variable>
 #include <functional>
 #include <future>
-#include <condition_variable>
 
 #include "framework/scheduling/Version.h"
 #include "framework/scheduling/statistics.h"
@@ -24,11 +24,7 @@
 
 namespace de {
 
-enum class ReconstructionPriority {
-  FLUSH = 0,
-  CMPCT = 1,
-  MAINT = 2  
-};
+enum class ReconstructionPriority { FLUSH = 0, CMPCT = 1, MAINT = 2 };
 
 template <ShardInterface ShardType, QueryInterface<ShardType> QueryType>
 struct ReconstructionArgs {
@@ -51,7 +47,8 @@ typedef std::function<void(void *)> Job;
 
 struct Task {
   Task(size_t size, size_t ts, Job job, void *args, size_t type = 0,
-       SchedulerStatistics *stats = nullptr, std::mutex *lk = nullptr, std::condition_variable *cv=nullptr)
+       SchedulerStatistics *stats = nullptr, std::mutex *lk = nullptr,
+       std::condition_variable *cv = nullptr)
       : m_job(job), m_size(size), m_timestamp(ts), m_args(args), m_type(type),
         m_stats(stats), m_lk(lk), m_cv(cv) {}
 

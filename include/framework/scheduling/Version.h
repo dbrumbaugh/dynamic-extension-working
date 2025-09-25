@@ -25,18 +25,17 @@ private:
   typedef BufferView<RecordType> BufferViewType;
 
 public:
-
   Version(size_t vid = 0)
       : m_buffer(nullptr), m_structure(nullptr), m_id(vid), m_buffer_head(0) {}
 
-  Version(size_t number, std::unique_ptr<StructureType> structure, BufferType *buff,
-          size_t head)
+  Version(size_t number, std::unique_ptr<StructureType> structure,
+          BufferType *buff, size_t head)
       : m_buffer(buff), m_structure(std::move(structure)), m_id(number),
         m_buffer_head(head) {
-          if (m_buffer) {
-            m_buffer->take_head_reference(m_buffer_head);
-          }
-        }
+    if (m_buffer) {
+      m_buffer->take_head_reference(m_buffer_head);
+    }
+  }
 
   ~Version() {
     if (m_buffer) {
@@ -55,7 +54,7 @@ public:
 
   size_t get_id() const { return m_id; }
 
-  void set_id(size_t id) { m_id = id;}
+  void set_id(size_t id) { m_id = id; }
 
   const StructureType *get_structure() const { return m_structure.get(); }
 
@@ -107,10 +106,7 @@ public:
     m_structure->update_shard_version(version);
   }
 
-  size_t get_head() {
-    return m_buffer_head;
-  }
-
+  size_t get_head() { return m_buffer_head; }
 
   void set_buffer(BufferType *buffer, size_t head) {
     assert(m_buffer == nullptr);

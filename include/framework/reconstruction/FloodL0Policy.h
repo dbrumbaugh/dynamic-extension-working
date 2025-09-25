@@ -24,7 +24,8 @@ public:
   FloodL0Policy(size_t buffer_size) : m_buffer_size(buffer_size) {}
 
   std::vector<ReconstructionVector>
-  get_reconstruction_tasks(const Version<ShardType, QueryType> *version, LockManager &lock_mngr) const override {
+  get_reconstruction_tasks(const Version<ShardType, QueryType> *version,
+                           LockManager &lock_mngr) const override {
     return {};
   }
 
