@@ -4,8 +4,8 @@
 
 #include <cstdlib>
 #define ENABLE_TIMER
-#define DE_PRINT_SHARD_COUNT
-#define TS_TEST
+// #define DE_PRINT_SHARD_COUNT
+// #define TS_TEST
 
 #include <thread>
 
@@ -54,15 +54,11 @@ std::atomic<size_t> total_query_count = 0;
 
 void insert_thread(Ext *extension, std::vector<Rec> *records, size_t start_idx,
                    size_t stop_idx, gsl_rng *rng) {
-  TIMER_INIT();
 
   for (size_t i = start_idx; i < stop_idx; i++) {
-  TIMER_START();
     while (!extension->insert((*records)[i], rng)) {
       usleep(1);
     }
-    TIMER_STOP();
-      fprintf(stdout, "I\t%ld\n", TIMER_RESULT());
   }
 }
 
@@ -94,7 +90,8 @@ int main(int argc, char **argv) {
 
   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
 
-  auto policy = get_policy<Shard, Q>(scale_factor, buffer_size, pol, n, modifier);
+  auto policy =
+      get_policy<Shard, Q>(scale_factor, buffer_size, pol, n, modifier);
   auto config = Conf(std::move(policy));
   config.recon_enable_maint_on_flush = true;
   config.recon_maint_disabled = false;
@@ -133,6 +130,8 @@ int main(int argc, char **argv) {
   size_t per_insert_thrd = (n - warmup) / insert_threads;
   size_t start = warmup;
 
+  TIMER_INIT();
+  TIMER_START();
   for (size_t i = 0; i < insert_threads; i++) {
     i_thrds[i] = std::thread(insert_thread, extension, &data, start,
                              start + per_insert_thrd, rng);
@@ -142,6 +141,10 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < insert_threads; i++) {
     i_thrds[i].join();
   }
+  TIMER_STOP();
+
+  size_t insert_tput = ((double)(n - warmup) / (double)TIMER_RESULT()) * 1e9;
+  fprintf(stdout, "Insertion Tput: %ld\n", insert_tput);
 
   inserts_done.store(true);
   inserts_done.store(false);

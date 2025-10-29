@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <gsl/gsl_rng.h>
 #include <mutex>
@@ -544,7 +545,13 @@ private:
 
       reconstruction_results<ShardType> flush_recon;
       flush_recon.target_level = 0;
+      auto start = std::chrono::high_resolution_clock::now();
       flush_recon.new_shard = std::make_shared<ShardType>(std::move(buffview));
+      auto stop = std::chrono::high_resolution_clock::now();
+      flush_recon.runtime =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start)
+              .count();
+      flush_recon.reccnt = flush_recon.new_shard->get_record_count();
 
       reconstructions.push_back(flush_recon);
 
@@ -637,6 +644,13 @@ private:
 
     /* apply our updates to the copied structure (adding/removing shards) */
     for (auto recon : reconstructions) {
+      if (recon.target_level != 0) {
+        #ifdef DE_PRINT_MODEL_OUTPUT
+        fprintf(stdout, "M\t%ld\t%ld\t%ld\t%ld\n", recon.target_level,
+                args->predicted_runtime, recon.runtime, recon.reccnt);
+        #endif
+      }
+
       auto grow = args->version->get_mutable_structure()->apply_reconstruction(
           recon, args->version->get_id());
       if (grow) {

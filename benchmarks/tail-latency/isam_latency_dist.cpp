@@ -25,10 +25,10 @@
 typedef de::Record<uint64_t, uint64_t> Rec;
 typedef de::ISAMTree<Rec>Shard;
 typedef de::rc::Query<Shard> Q;
-typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::SerialScheduler> Ext;
+typedef de::DynamicExtension<Shard, Q, de::DeletePolicy::TOMBSTONE, de::FIFOScheduler> Ext;
 typedef Q::Parameters QP;
 typedef de::DEConfiguration<Shard, Q, de::DeletePolicy::TOMBSTONE,
-                            de::SerialScheduler>
+                            de::FIFOScheduler>
     Conf;
 
 void usage(char *progname) {
@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
     auto data = read_sosd_file<Rec>(d_fname, n);
     auto queries = read_range_queries<QP>(q_fname, .0001);
 
-    std::vector<int> policies = {0, 1};
-    std::vector<size_t> buffers = {1000, 8000, 16000};
-    std::vector<size_t> sfs = {4};
+    std::vector<int> policies = {6};
+    std::vector<size_t> buffers = {12000};
+    std::vector<size_t> sfs = {3};
     
     for (size_t l=0; l<policies.size(); l++) {
     for (size_t j=0; j<buffers.size(); j++) {
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         config.recon_enable_maint_on_flush = true;
         config.recon_maint_disabled = false;
         
-        auto extension = new Ext(std::move(config));
+        auto extension = new Ext(std::move(config), .999);
 
         /* warmup structure w/ 10% of records */
         size_t warmup = .3 * n;
@@ -89,24 +89,24 @@ int main(int argc, char **argv) {
 
         extension->await_version();
         
-        /* repeat the queries a bunch of times */
-        for (size_t l=0; l<10; l++) {
-        for (size_t i=0; i<queries.size(); i++) {
-            TIMER_START();
-            auto q = queries[i];
-            auto res = extension->query(std::move(q));
-            res.get();
-            TIMER_STOP();
+        // /* repeat the queries a bunch of times */
+        // for (size_t l=0; l<10; l++) {
+        // for (size_t i=0; i<queries.size(); i++) {
+        //     TIMER_START();
+        //     auto q = queries[i];
+        //     auto res = extension->query(std::move(q));
+        //     res.get();
+        //     TIMER_STOP();
 
-            fprintf(stdout, "Q\t%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
-        }
-        }
+        //     fprintf(stdout, "Q\t%ld\t%ld\t%d\t%ld\n", sfs[k], buffers[j], policies[l], TIMER_RESULT());
+        // }
+        // }
 
 
-        QP p = {0, 10000};
-        auto res =extension->query(std::move(p));
+        // QP p = {0, 10000};
+        // auto res =extension->query(std::move(p));
 
-        fprintf(stderr, "%ld\n", res.get());
+        // fprintf(stderr, "%ld\n", res.get());
         delete extension;
     }}}
 
