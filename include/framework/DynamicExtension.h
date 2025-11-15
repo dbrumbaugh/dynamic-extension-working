@@ -996,18 +996,30 @@ private:
      *
      */
     if (m_stall_us.load() > 0) {
-      usleep(m_stall_us.load());
+      auto start = std::chrono::high_resolution_clock::now();
+      while (true) {
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start)
+                .count();
+        if (time >= 40000 * m_stall_us.load()) {
+          break;
+        }
+      }
     }
+    // if (m_stall_us.load() > 0) {
+    //   usleep(m_stall_us.load());
+    // }
 
     /*
      *
      */
-    if (m_insertion_rate.load() < 1 && rng) {
-      auto p = gsl_rng_uniform(rng);
-      if (p > m_insertion_rate.load()) {
-        usleep(1);
-      }
-    }
+    // if (m_insertion_rate.load() < 1 && rng) {
+    //   auto p = gsl_rng_uniform(rng);
+    //   if (p > m_insertion_rate.load()) {
+    //     usleep(1);
+    //   }
+    // }
 
     /* this will fail if the HWM is reached and return 0 */
     return m_buffer->append(rec, ts);

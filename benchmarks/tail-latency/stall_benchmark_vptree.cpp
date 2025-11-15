@@ -5,6 +5,7 @@
 #include <cstdlib>
 #define ENABLE_TIMER
 #define DE_PRINT_SHARD_COUNT
+#define DE_PRINT_MODEL_OUTPUT
 #define TS_TEST
 
 #include <thread>
@@ -85,7 +86,7 @@ int main(int argc, char **argv) {
 
   auto data = read_vector_file<Rec, 300>(d_fname, n);
 
-  size_t buffer_size = 1000;
+  size_t buffer_size = 250;
   size_t scale_factor = 8;
   double modifier = 0;
   size_t insert_threads = 1;

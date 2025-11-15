@@ -262,7 +262,7 @@ private:
   ssize_t m_level_no;
   std::vector<shard_ptr> m_shards;
 
-  const size_t m_window_size = 1;
+  const size_t m_window_size = 10;
 
   std::deque<size_t> m_rt_window;
 };

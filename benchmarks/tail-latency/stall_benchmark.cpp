@@ -5,6 +5,7 @@
 #include <cstdlib>
 #define ENABLE_TIMER
 #define DE_PRINT_SHARD_COUNT
+#define DE_PRINT_MODEL_OUTPUT
 #define TS_TEST
 
 #include <thread>
